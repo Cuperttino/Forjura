@@ -621,7 +621,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '1.6';
+const APP_VERSION = '1.7';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -701,6 +701,7 @@ function render(top) {
   el.scrollTop = top || changed ? 0 : scroll;
   renderChrome(); renderSheet();
   if (S.view === 'progress' || S.view === 'body') wireChart();
+  const tabsEl = $('#setup-tabs'); if (tabsEl) { const c = tabsEl.querySelector('.chip.on'); if (c) tabsEl.scrollLeft = c.offsetLeft - tabsEl.offsetLeft - 16; }
   if (animate && oldNodes.length) transition(el, oldNodes, scroll, prevPlace, now);
   prevKey = now.key; prevPlace = now;
 }
@@ -940,10 +941,14 @@ function setupView() {
     const list = sortedDays();
     if (st.tab >= list.length) st.tab = Math.max(0, list.length - 1);
     const day = list[st.tab];
+    const dayLabel = day ? (day.weekday != null ? WD[day.weekday] : 'Sin día fijo') : '';
     body = `<h1 class="q stamp">Ajusta cada día</h1>
-    <div class="tabs">${list.map((d, i) => `<button class="chip ${i === st.tab ? 'on' : ''}" data-a="setup-tab" data-i="${i}">${d.weekday != null ? WS[d.weekday] + ' · ' : ''}${esc(d.name || 'Sin nombre')}</button>`).join('')}<button class="chip" data-a="day-add" data-setup="1">${ICON.plus}Día</button></div>
-    ${day ? dayEditor(day) : '<div class="empty">Añade tu primer día de entrenamiento.</div>'}`;
-    foot = `${backBtn}<button class="btn go" data-a="setup-next" ${days().some(d => exCount(d)) ? '' : 'disabled'}>Seguir</button>`;
+    <div class="tabs" id="setup-tabs">${list.map((d, i) => `<button class="chip ${i === st.tab ? 'on' : ''}" data-a="setup-tab" data-i="${i}">${d.weekday != null ? WS[d.weekday] + ' · ' : ''}${esc(d.name || 'Sin nombre')}</button>`).join('')}<button class="chip" data-a="day-add" data-setup="1">${ICON.plus}Día</button></div>
+    ${day ? `<p class="muted">Día ${st.tab + 1} de ${list.length}: <b style="color:var(--chalk)">${dayLabel}</b>. Añade o quita grupos y ejercicios.</p>${dayEditor(day, true)}` : '<div class="empty">Añade tu primer día de entrenamiento.</div>'}`;
+    const nextDay = list[st.tab + 1];
+    foot = nextDay
+      ? `${backBtn}<button class="btn go" data-a="setup-nextday">Siguiente: ${esc(nextDay.name)}</button>`
+      : `${backBtn}<button class="btn go" data-a="setup-next" ${days().some(d => exCount(d)) ? '' : 'disabled'}>Seguir</button>`;
   }
   if (step === 6) {
     const p = S.data.settings;
@@ -971,7 +976,8 @@ ACTS['setup-wd'] = d => {
   render();
 };
 ACTS['setup-tpl'] = d => { S.setup.tpl = d.k; render(); };
-ACTS['setup-back'] = () => { S.setup.step--; render(true); };
+ACTS['setup-back'] = () => { const st = S.setup; if (st.step === 5 && st.tab > 0) st.tab--; else st.step--; render(true); };
+ACTS['setup-nextday'] = () => { S.setup.tab++; render(true); };
 ACTS['setup-tab'] = d => { S.setup.tab = +d.i; render(); };
 ACTS['setup-next'] = () => {
   const st = S.setup;
@@ -1067,12 +1073,10 @@ ACTS['day-add'] = d => {
   if (d.setup) { S.setup.tab = sortedDays().findIndex(x => x.id === day.id); render(); }
   else go('day', { id: day.id });
 };
-function dayEditor(day) {
+function dayEditor(day, inSetup) {
   return `<div class="stack">
     <div class="field"><label for="day-name-${day.id}">Nombre del día</label><input id="day-name-${day.id}" type="text" value="${esc(day.name)}" data-i="day-name" data-id="${day.id}"></div>
-    <div class="field"><label>Día de la semana</label>
-      <div class="wkpick">${WS.map((w, i) => `<button class="${day.weekday === i ? 'on' : ''}" data-a="day-wd" data-id="${day.id}" data-i="${i}" aria-label="${WD[i]}" aria-pressed="${day.weekday === i}">${w}</button>`).join('')}</div>
-    </div>
+    ${inSetup ? '' : `<button class="setline" style="border-top:0" data-a="open-wd" data-id="${day.id}"><span>Día de la semana<br><span class="muted small">${day.weekday != null ? WD[day.weekday] : 'Sin día fijo'}</span></span><span class="link small">Cambiar</span></button>`}
     <div class="groups">${day.groups.map(g => `<section class="gcard">
       <div class="ghead"><h3 class="stamp">${esc(g.muscle)}</h3><button class="iconbtn" data-a="group-del" data-day="${day.id}" data-g="${g.id}" aria-label="Eliminar ${esc(g.muscle)}">${ICON.trash}</button></div>
       ${g.exercises.map(e => `<div class="exitem" data-day="${day.id}" data-g="${g.id}" data-e="${e.id}">
@@ -1096,15 +1100,24 @@ function dayView() {
   </div>`;
 }
 INPUTS['day-name'] = (d, el) => { const day = findDay(d.id); if (day) { day.name = el.value.trim() || day.name; touch(); const t = $('.bar .ttl'); if (t) t.textContent = day.name; } };
+ACTS['open-wd'] = d => { S.sheet = { type: 'wd', id: d.id }; renderSheet(); };
+function wdSheet() {
+  const day = findDay(S.sheet.id);
+  const row = (val, label) => {
+    const other = val != null ? days().find(x => x.weekday === val && x.id !== day.id) : null, on = day.weekday === val;
+    return `<button class="dayrow ${on ? 'on' : ''}" data-a="day-wd" data-id="${day.id}" data-i="${val == null ? '' : val}" aria-pressed="${on}"><span>${label}${other ? `<br><span class="muted small">Ahora: ${esc(other.name)}. Se intercambian.</span>` : ''}</span><span class="tick">${on ? ICON.check : ''}</span></button>`;
+  };
+  return `<div class="sheet"><div class="shead"><h2 class="stamp">¿Qué día toca ${esc(day.name)}?</h2><button class="iconbtn" data-a="close-sheet" aria-label="Cerrar">${ICON.x}</button></div>
+    ${WD.map((w, i) => row(i, w)).join('')}${row(null, 'Sin día fijo')}</div>`;
+}
 ACTS['day-wd'] = d => {
-  const day = findDay(d.id), i = +d.i;
-  if (day.weekday === i) day.weekday = null;
-  else {
-    const other = days().find(x => x.weekday === i && x.id !== day.id);
-    if (other) { other.weekday = null; toast(`${other.name} se queda sin día fijo`); }
-    day.weekday = i;
+  const day = findDay(d.id), val = d.i === '' ? null : +d.i;
+  if (day.weekday !== val) {
+    const other = val != null ? days().find(x => x.weekday === val && x.id !== day.id) : null;
+    if (other) { other.weekday = day.weekday; toast(`Intercambiado con ${other.name}`); }
+    day.weekday = val; touch();
   }
-  touch(); if (S.setup) S.setup.tab = sortedDays().findIndex(x => x.id === day.id); render();
+  S.sheet = null; render();
 };
 ACTS['day-del'] = d => {
   const day = findDay(d.id);
@@ -1185,7 +1198,7 @@ function renderSheet() {
     setTimeout(() => o.remove(), 190);
     return;
   }
-  const map = { timer: timerSheet, confirm: confirmSheet, group: groupSheet, ex: exSheet, exedit: exEditSheet, pickday: pickDaySheet, name: nameSheet, goal: goalSheet, height: heightSheet, bodyask: bodyAskSheet };
+  const map = { timer: timerSheet, confirm: confirmSheet, group: groupSheet, ex: exSheet, exedit: exEditSheet, pickday: pickDaySheet, name: nameSheet, wd: wdSheet, goal: goalSheet, height: heightSheet, bodyask: bodyAskSheet };
   const keep = el.querySelector('.overlay:not(.closing) .sheet'); const top = keep ? keep.scrollTop : 0, same = keep && el.dataset.t === s.type;
   el.dataset.t = s.type;
   el.innerHTML = `<div class="overlay" data-backdrop="1">${map[s.type]()}</div>`;
