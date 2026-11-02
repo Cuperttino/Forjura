@@ -319,7 +319,9 @@ details.sess summary span { font-size: 14px; color: var(--steel); }
 .ring { transition: stroke-dashoffset .25s linear, stroke .25s; }
 .minbtn { transition: background-color .18s, color .18s, box-shadow .18s, transform .12s; }
 .minbtn:active, .chip:active, .drow:active, .work:active, .tpl:active, .dayrow:active, .exrow:active { transform: scale(.975); }
-.drow, .work, .tpl, .dayrow, .exrow, .chip, .setline { transition: background-color .15s, transform .12s; }
+.drow, .work, .tpl, .dayrow, .exrow, .chip, .setline { transition: background-color .16s, color .16s, box-shadow .16s, transform .12s; }
+.seg button, .wkpick button, .bigpick, .tick, .btn { transition: background-color .16s, color .16s, box-shadow .16s, opacity .16s, transform .12s; }
+.tick svg, .chip.on > svg { animation: popin .2s cubic-bezier(.3,1.6,.5,1); }
 .ch-line { stroke-dasharray: 1; animation: draw .8s cubic-bezier(.3,.7,.3,1); }
 .ch-area { animation: fadein .7s ease .2s backwards; }
 .ch-end { animation: popin .3s cubic-bezier(.3,1.6,.5,1) .65s backwards; transform-box: fill-box; transform-origin: center; }
@@ -621,7 +623,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '1.7';
+const APP_VERSION = '1.8';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -633,13 +635,47 @@ const TAB_ORDER = ['home', 'routine', 'progress', 'body', 'settings'];
 let prevKey = null, prevPlace = null, ghostEl = null;
 function place() {
   const v = S.view, st = S.setup;
-  if (v === 'setup') return { key: 'setup:' + st.step + ':' + st.tab, depth: st.step, side: st.tab };
+  if (v === 'setup') return { key: 'setup:' + st.step, depth: st.step, side: 0 };
   if (v === 'log') return { key: 'log:' + S.p.e, depth: 2, side: 0, seq: true };
   if (v === 'day') return { key: 'day:' + S.p.id, depth: 1, side: 0 };
   if (v === 'workout') return { key: v, depth: 1, side: 0 };
   if (v === 'summary') return { key: v, depth: 2, side: 0, rise: true };
   return { key: v, depth: 0, side: TAB_ORDER.indexOf(v) };
 }
+/* Updates a page in place: unchanged elements stay put, so colour changes animate and nothing flashes */
+const morphKey = n => n.nodeType === 1 ? (n.dataset.k || n.dataset.e || n.id || null) : null;
+function morphNode(a, b) {
+  if (a.nodeType !== 1) { if (a.nodeValue !== b.nodeValue) a.nodeValue = b.nodeValue; return; }
+  if (a.id === 'chart' && !a.isEqualNode(b)) { a.replaceWith(b); return; }
+  for (const { name } of [...a.attributes]) {
+    if (!b.hasAttribute(name) && !(name === 'open' && a.tagName === 'DETAILS')) a.removeAttribute(name);
+  }
+  for (const { name, value } of [...b.attributes]) if (a.getAttribute(name) !== value) a.setAttribute(name, value);
+  if (a.tagName === 'INPUT') { const v = b.getAttribute('value') || ''; if (a.type !== 'file' && a !== document.activeElement && a.value !== v) a.value = v; return; }
+  if (a.tagName === 'TEXTAREA') { if (a !== document.activeElement && a.value !== b.textContent) a.value = b.textContent; return; }
+  morphChildren(a, b);
+}
+function morphChildren(a, b) {
+  const keyed = new Map();
+  [...a.childNodes].forEach(n => { const k = morphKey(n); if (k) keyed.set(k, n); });
+  let cur = a.firstChild;
+  [...b.childNodes].forEach(nb => {
+    const k = morphKey(nb);
+    let match = k ? keyed.get(k) : null;
+    if (match) keyed.delete(k);
+    else if (!k) {
+      let c = cur;
+      while (c && morphKey(c)) c = c.nextSibling;
+      if (c && c.nodeType === nb.nodeType && c.nodeName === nb.nodeName) match = c;
+    }
+    if (match) {
+      if (match !== cur) a.insertBefore(match, cur); else cur = cur.nextSibling;
+      morphNode(match, nb);
+    } else a.insertBefore(nb, cur);
+  });
+  while (cur) { const nx = cur.nextSibling; cur.remove(); cur = nx; }
+}
+function morphHTML(el, html) { const t = document.createElement('div'); t.innerHTML = html; morphChildren(el, t); }
 function clearGhost(el) {
   if (ghostEl) { ghostEl.remove(); ghostEl = null; }
   el.getAnimations().forEach(a => a.cancel());
@@ -697,11 +733,22 @@ function render(top) {
   const animate = changed && !CALM.matches && el.animate;
   const oldNodes = animate ? [...el.childNodes] : null;
   if (oldNodes) oldNodes.forEach(n => n.remove());
-  el.innerHTML = (VIEWS[S.view] || VIEWS.loading)();
+  const html = (VIEWS[S.view] || VIEWS.loading)();
+  if (changed || !prevPlace) el.innerHTML = html; else morphHTML(el, html);
   el.scrollTop = top || changed ? 0 : scroll;
   renderChrome(); renderSheet();
   if (S.view === 'progress' || S.view === 'body') wireChart();
-  const tabsEl = $('#setup-tabs'); if (tabsEl) { const c = tabsEl.querySelector('.chip.on'); if (c) tabsEl.scrollLeft = c.offsetLeft - tabsEl.offsetLeft - 16; }
+  const tabsEl = $('#setup-tabs');
+  if (tabsEl) {
+    const c = tabsEl.querySelector('.chip.on');
+    if (c) tabsEl.scrollTo({ left: c.offsetLeft - tabsEl.offsetLeft - 16, behavior: changed || CALM.matches ? 'auto' : 'smooth' });
+    const panel = $('#setup-day'), st = S.setup;
+    if (panel && !changed && st.shownTab != null && st.shownTab !== st.tab && !CALM.matches && panel.animate) {
+      const dir = st.tab > st.shownTab ? 1 : -1;
+      panel.animate([{ opacity: 0, transform: `translateX(${dir * 36}px)` }, { opacity: 1, transform: 'none' }], { duration: 260, easing: EASE });
+    }
+    st.shownTab = st.tab;
+  }
   if (animate && oldNodes.length) transition(el, oldNodes, scroll, prevPlace, now);
   prevKey = now.key; prevPlace = now;
 }
@@ -944,7 +991,7 @@ function setupView() {
     const dayLabel = day ? (day.weekday != null ? WD[day.weekday] : 'Sin día fijo') : '';
     body = `<h1 class="q stamp">Ajusta cada día</h1>
     <div class="tabs" id="setup-tabs">${list.map((d, i) => `<button class="chip ${i === st.tab ? 'on' : ''}" data-a="setup-tab" data-i="${i}">${d.weekday != null ? WS[d.weekday] + ' · ' : ''}${esc(d.name || 'Sin nombre')}</button>`).join('')}<button class="chip" data-a="day-add" data-setup="1">${ICON.plus}Día</button></div>
-    ${day ? `<p class="muted">Día ${st.tab + 1} de ${list.length}: <b style="color:var(--chalk)">${dayLabel}</b>. Añade o quita grupos y ejercicios.</p>${dayEditor(day, true)}` : '<div class="empty">Añade tu primer día de entrenamiento.</div>'}`;
+    ${day ? `<div class="stack" id="setup-day" data-k="day-${day.id}"><p class="muted">Día ${st.tab + 1} de ${list.length}: <b style="color:var(--chalk)">${dayLabel}</b>. Añade o quita grupos y ejercicios.</p>${dayEditor(day, true)}</div>` : '<div class="empty">Añade tu primer día de entrenamiento.</div>'}`;
     const nextDay = list[st.tab + 1];
     foot = nextDay
       ? `${backBtn}<button class="btn go" data-a="setup-nextday">Siguiente: ${esc(nextDay.name)}</button>`
@@ -976,9 +1023,10 @@ ACTS['setup-wd'] = d => {
   render();
 };
 ACTS['setup-tpl'] = d => { S.setup.tpl = d.k; render(); };
-ACTS['setup-back'] = () => { const st = S.setup; if (st.step === 5 && st.tab > 0) st.tab--; else st.step--; render(true); };
-ACTS['setup-nextday'] = () => { S.setup.tab++; render(true); };
-ACTS['setup-tab'] = d => { S.setup.tab = +d.i; render(); };
+const toTop = () => { const sc = screenEl(); if (sc.scrollTop) sc.scrollTo({ top: 0, behavior: CALM.matches ? 'auto' : 'smooth' }); };
+ACTS['setup-back'] = () => { const st = S.setup; if (st.step === 5 && st.tab > 0) { st.tab--; render(); toTop(); } else { st.step--; render(true); } };
+ACTS['setup-nextday'] = () => { S.setup.tab++; render(); toTop(); };
+ACTS['setup-tab'] = d => { S.setup.tab = +d.i; render(); toTop(); };
 ACTS['setup-next'] = () => {
   const st = S.setup;
   if (st.step === 4) { S.data.days = buildFromTemplate(st.tpl, st.weekdays); st.tab = 0; touch(); }
@@ -1159,7 +1207,7 @@ function exSheet() {
 function addEx(name) {
   const day = findDay(S.sheet.day), g = day.groups.find(x => x.id === S.sheet.g);
   g.exercises.push(makeEx(name)); touch();
-  const scroll = screenEl().scrollTop; screenEl().innerHTML = VIEWS[S.view](); screenEl().scrollTop = scroll; renderSheet();
+  render();
 }
 ACTS['ex-pick'] = d => addEx(d.n);
 ACTS['ex-edit'] = d => { S.sheet = { type: 'exedit', day: d.day, g: d.g, e: d.e }; renderSheet(); };
@@ -1199,10 +1247,10 @@ function renderSheet() {
     return;
   }
   const map = { timer: timerSheet, confirm: confirmSheet, group: groupSheet, ex: exSheet, exedit: exEditSheet, pickday: pickDaySheet, name: nameSheet, wd: wdSheet, goal: goalSheet, height: heightSheet, bodyask: bodyAskSheet };
-  const keep = el.querySelector('.overlay:not(.closing) .sheet'); const top = keep ? keep.scrollTop : 0, same = keep && el.dataset.t === s.type;
+  const keep = el.querySelector('.overlay:not(.closing) .sheet'), same = keep && el.dataset.t === s.type;
   el.dataset.t = s.type;
-  el.innerHTML = `<div class="overlay" data-backdrop="1">${map[s.type]()}</div>`;
-  if (same) { const o = el.querySelector('.overlay'), sh = el.querySelector('.sheet'); o.style.animation = 'none'; sh.style.animation = 'none'; sh.scrollTop = top; }
+  const html = `<div class="overlay" data-backdrop="1">${map[s.type]()}</div>`;
+  if (same) morphHTML(el, html); else el.innerHTML = html;
 }
 
 /* ========== workout ========== */
@@ -1490,7 +1538,8 @@ ACTS['sess-del'] = d => ask('¿Eliminar esta sesión?', 'Sus series desaparecen 
 });
 function wireChart() {
   const svg = $('#chart-svg'), tip = $('#ch-tip'), wrap = $('#chart');
-  if (!svg || !S.prog.pts) return;
+  if (!svg || !S.prog.pts || svg.dataset.wired) return;
+  svg.dataset.wired = '1';
   const pts = S.prog.pts, u = unit();
   const show = ev => {
     const r = svg.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width * CH.W;
@@ -1794,7 +1843,7 @@ app.addEventListener('submit', ev => {
     touch(); S.setup.step = 2; render(true);
   }
   if (id === 'group-form') { const v = $('#g-custom').value.trim(); if (v) addGroup(v); }
-  if (id === 'ex-form') { const i = $('#e-custom'), v = i.value.trim(); if (v) addEx(v); const n = $('#e-custom'); if (n) n.focus(); }
+  if (id === 'ex-form') { const i = $('#e-custom'), v = i.value.trim(); if (v) addEx(v); const n = $('#e-custom'); if (n) { n.value = ''; n.focus(); } }
   if (id === 'exedit-form') {
     const s = S.sheet, day = findDay(s.day), g = day.groups.find(x => x.id === s.g), e = g.exercises.find(x => x.id === s.e);
     e.name = $('#ee-name').value.trim() || e.name; e.sets = Math.max(1, Math.min(20, parseInt($('#ee-sets').value, 10) || 3)); e.reps = $('#ee-reps').value.trim() || e.reps;
