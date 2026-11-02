@@ -94,7 +94,7 @@ h1, h2, h3 { text-wrap: balance; }
 /* fields */
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field label { font-size: 14px; font-weight: 600; color: var(--steel); }
-input[type=text], input[type=email], input[type=password], input[type=number], input[type=time], textarea, select { width: 100%; min-height: 54px; padding: 12px 14px; font-size: 17px; background: var(--plate); border: 1.5px solid var(--line); border-radius: 8px; }
+input[type=text], input[type=email], input[type=password], input[type=number], textarea, select { width: 100%; min-height: 54px; padding: 12px 14px; font-size: 17px; background: var(--plate); border: 1.5px solid var(--line); border-radius: 8px; }
 input:focus, textarea:focus, select:focus { border-color: var(--load); outline: none; }
 textarea { min-height: 76px; resize: vertical; line-height: 1.35; }
 .err { color: var(--down); font-weight: 600; font-size: 15px; }
@@ -598,7 +598,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '1.5';
+const APP_VERSION = '1.4';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -1596,14 +1596,6 @@ function settingsView() {
       ${switchLine('Vibración al terminar', 'vibrate', 'Disponible solo en algunos móviles Android')}
       <button class="setline" data-a="test-alert"><span>Probar el aviso</span>${ICON.next.replace('<svg', '<svg width="20" height="20" style="color:var(--steel-dim)"')}</button></div>
     </div>
-    <h2 class="eyebrow sect">Recordatorios</h2>
-    <div style="padding-top:10px" class="stack">
-      <p class="muted small">Se añaden al calendario de tu móvil, que te avisa cada día de entreno aunque la app esté cerrada.</p>
-      <div class="field"><label for="rem-time">Hora del aviso</label><input id="rem-time" type="time" value="${esc(st.remindAt || '18:00')}" data-i="rem-time"></div>
-      ${S.demo ? '<p class="muted small">No disponible con los datos de ejemplo.</p>' : days().some(d => d.weekday != null)
-        ? `<button class="btn line slim" data-a="reminders">Añadir al calendario (${days().filter(d => d.weekday != null).length} días)</button><p class="dim small">Si cambias tu rutina, borra los recordatorios antiguos del calendario y vuelve a añadirlos.${navigator.standalone ? ' Si no se abre el calendario, hazlo desde Safari.' : ''}</p>`
-        : '<p class="muted small">Asigna días de la semana a tu rutina para activarlos.</p>'}
-    </div>
     <h2 class="eyebrow sect">Pantalla</h2>
     <div style="padding-top:8px"><button class="setline" data-a="set-motion" role="switch" aria-checked="${!CALM.matches}"><span>Animaciones${OS_CALM.matches ? '<br><span class="muted small">Tu dispositivo tiene activado «Reducir movimiento»</span>' : ''}</span><span class="switch ${CALM.matches ? '' : 'on'}"><i></i></span></button></div>
     <h2 class="eyebrow sect">Tus datos</h2>
@@ -1619,39 +1611,6 @@ function settingsView() {
 ACTS['set-toggle'] = (d, el) => {
   const st = S.data.settings; st[d.k] = !st[d.k]; touch();
   el.setAttribute('aria-checked', String(!!st[d.k])); el.querySelector('.switch').classList.toggle('on', !!st[d.k]);
-};
-INPUTS['rem-time'] = (d, el) => { if (/^\d\d:\d\d$/.test(el.value)) { S.data.settings.remindAt = el.value; touch(); } };
-function buildCalendar() {
-  const BY = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
-  const [hh, mm] = (S.data.settings.remindAt || '18:00').split(':').map(Number);
-  const p2 = n => String(n).padStart(2, '0');
-  const ics = t => String(t).replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
-  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
-  const local = d => '' + d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()) + 'T' + p2(d.getHours()) + p2(d.getMinutes()) + '00';
-  const url = location.protocol === 'https:' && !window.claude ? location.origin + location.pathname : '';
-  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Hierro//Recordatorios//ES', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
-  days().filter(d => d.weekday != null).forEach(d => {
-    const first = new Date(); first.setHours(hh, mm, 0, 0);
-    let add = (d.weekday - weekdayOf(first) + 7) % 7;
-    if (add === 0 && first.getTime() <= Date.now()) add = 7;
-    first.setDate(first.getDate() + add);
-    const end = new Date(first.getTime() + 36e5);
-    const muscles = d.groups.map(g => g.muscle).join(', ');
-    lines.push('BEGIN:VEVENT', 'UID:hierro-' + d.id + '@hierro', 'DTSTAMP:' + stamp, 'DTSTART:' + local(first), 'DTEND:' + local(end),
-      'RRULE:FREQ=WEEKLY;BYDAY=' + BY[d.weekday], 'SUMMARY:' + ics('Entrenar: ' + d.name));
-    if (muscles) lines.push('DESCRIPTION:' + ics(muscles));
-    if (url) lines.push('URL:' + url);
-    lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + ics('Hoy toca ' + d.name), 'TRIGGER:PT0M', 'END:VALARM', 'END:VEVENT');
-  });
-  lines.push('END:VCALENDAR');
-  return lines.join('\r\n') + '\r\n';
-}
-ACTS['reminders'] = () => {
-  if (window.claude) { toast('Abre la app desde su dirección de GitHub para añadirlos'); return; }
-  const url = URL.createObjectURL(new Blob([buildCalendar()], { type: 'text/calendar;charset=utf-8' }));
-  const a = document.createElement('a'); a.href = url; a.download = 'hierro-recordatorios.ics'; document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
-  toast('Abre el archivo para añadirlo al calendario');
 };
 ACTS['set-motion'] = () => { S.data.settings.motion = CALM.matches; touch(); applyMotion(); render(); };
 ACTS['set-unit'] = d => { S.bodyDraft = null; S.data.settings.unit = d.k; S.data.settings.step = d.k === 'lb' ? 5 : 2.5; touch(); render(); };
