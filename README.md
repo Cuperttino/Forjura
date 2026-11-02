@@ -1,6 +1,6 @@
 # Hierro
 
-Web app para registrar el progreso en el gimnasio: rutina semanal, pesos, series, repeticiones, notas, temporizador de descanso e historial con gráficas. Se adapta al móvil, con botones grandes y pocos toques, y al ordenador, con menú lateral y paneles en paralelo.
+Web app para registrar el progreso en el gimnasio: rutina semanal, pesos, series, repeticiones, notas, temporizador de descanso, historial con gráficas y seguimiento del peso corporal con objetivo. Se adapta al móvil, con botones grandes y pocos toques, y al ordenador, con menú lateral y paneles en paralelo.
 
 No necesita cuenta ni servidor. Cada persona escribe su nombre y sus datos se quedan en su propio navegador.
 
