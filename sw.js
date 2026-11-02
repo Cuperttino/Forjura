@@ -1,5 +1,5 @@
 // Sube el número de versión al publicar cambios en imágenes o iconos.
-const CACHE = 'hierro-v1';
+const CACHE = 'hierro-v2';
 const ASSETS = [
   "./",
   "index.html",
@@ -28,7 +28,7 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   // La página se pide primero a la red para recibir las novedades; sin conexión se usa la copia guardada.
   if (req.mode === 'navigate') {
-    e.respondWith(fetch(req).then(res => {
+    e.respondWith(fetch(req.url, { cache: 'no-cache' }).then(res => {
       const copy = res.clone();
       caches.open(CACHE).then(c => c.put('index.html', copy));
       return res;
