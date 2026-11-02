@@ -109,6 +109,8 @@ textarea { min-height: 76px; resize: vertical; line-height: 1.35; }
 .nav button { min-height: 62px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 12.5px; font-weight: 600; color: var(--steel-dim); }
 .nav button.on { color: var(--load); }
 .nav .brand { display: none; }
+.nav .credit { display: none; }
+.credit { margin: 0; text-align: center; font-size: 13px; font-weight: 600; letter-spacing: .02em; color: var(--steel-dim); }
 .nav.focus { display: none; }
 
 /* rest bar */
@@ -341,6 +343,7 @@ details.sess[open] > div { animation: setin .24s ease; }
   #nav { grid-column: 1; grid-row: 1 / 4; }
   #sheet, #fx { display: contents; }
   .nav, .nav.focus { display: flex; flex-direction: column; gap: 4px; width: 224px; height: 100%; padding: 0 12px 16px; border-top: 0; border-right: 1px solid var(--plate-2); }
+  .nav .credit { display: block; margin-top: auto; padding: 8px 12px 0; text-align: left; }
   .nav .brand { display: block; font-size: 46px; font-weight: 900; padding: 22px 12px 20px; }
   .nav button { flex-direction: row; justify-content: flex-start; gap: 12px; min-height: 50px; padding: 0 12px; border-radius: 8px; font-size: 16px; color: var(--steel); }
   .nav button:hover { background: var(--plate-2); color: var(--chalk); }
@@ -598,7 +601,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '1.4';
+const APP_VERSION = '1.5';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -701,7 +704,7 @@ function renderChrome() {
   const box = $('#nav'), showNav = S.data && S.view !== 'setup';
   if (!showNav) box.innerHTML = '';
   else {
-    if (!box.firstElementChild) box.innerHTML = `<div class="nav"><i class="ind"></i><div class="brand stamp">Hierro</div>` + Object.keys(tabs).map(k => `<button data-a="tab" data-v="${k}">${ic[k]}<span>${tabs[k]}</span></button>`).join('') + '</div>';
+    if (!box.firstElementChild) box.innerHTML = `<div class="nav"><i class="ind"></i><div class="brand stamp">Hierro</div>` + Object.keys(tabs).map(k => `<button data-a="tab" data-v="${k}">${ic[k]}<span>${tabs[k]}</span></button>`).join('') + '<p class="credit">By Cuperttino</p></div>';
     const n = box.firstElementChild, focus = !tabs[S.view];
     n.classList.toggle('focus', focus);
     n.querySelectorAll('button').forEach(b => {
@@ -884,6 +887,7 @@ function welcomeView() {
     <p class="muted small">No necesitas cuenta. Todo se guarda en este navegador.</p>
     <button type="button" class="btn line slim" data-a="demo">Ver con datos de ejemplo</button>
     <label class="btn line slim" for="import-file" style="cursor:pointer">Restaurar una copia</label><input id="import-file" type="file" accept=".json,application/json" data-i="import" hidden>
+    <p class="credit">By Cuperttino</p>
   </form></div>`;
 }
 function setupView() {
@@ -1604,7 +1608,7 @@ function settingsView() {
       ${S.demo ? '' : `<button class="btn line slim" data-a="export">Descargar copia de seguridad</button>
       <label class="btn line slim" for="import-file" style="cursor:pointer">Restaurar una copia</label><input id="import-file" type="file" accept=".json,application/json" data-i="import" hidden>`}
       ${S.demo ? '<button class="btn slim" data-a="exit-demo">Salir del ejemplo</button>' : '<button class="btn danger slim" data-a="delete-all">Borrar todos mis datos</button>'}
-      <p class="dim small">Hierro versión ${APP_VERSION}</p>
+      <p class="dim small">Hierro versión ${APP_VERSION} · By Cuperttino</p>
     </div>
   </div></div></div>`;
 }
