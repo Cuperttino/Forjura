@@ -453,6 +453,10 @@ a.btn { text-decoration: none; }
 .kb .composer { padding-bottom: var(--space-2); }
 .composer input { flex: 1; min-width: 0; font-size: 17px; }
 .chat-note { font-size: 13px; color: var(--steel-dim); text-align: center; }
+.hquick { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3); border-radius: var(--radius-m); background: var(--plate-2); }
+.hquick input { background: var(--ground); }
+.hquick-times { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+.hquick-times input { min-width: 0; }
 .cols, .daygrid, .groups { display: flex; flex-direction: column; gap: 12px; }
 
 /* Desktop: sidebar, side-by-side panels, centred dialogs */
@@ -966,7 +970,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.6';
+const APP_VERSION = '2.7';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -2555,13 +2559,27 @@ ACTS['gym-locate'] = () => {
 };
 ACTS['gym-pick'] = d => { const r = S.ai.gym.results[+d.i]; if (!r) return; S.data.gym = r; S.ai.gym.results = null; S.ai.gym.q = ''; touch(); render(); toast('Gimnasio guardado'); screenEl().scrollTo({ top: 0, behavior: CALM.matches ? 'auto' : 'smooth' }); };
 ACTS['gym-del'] = () => ask('¿Quitar este gimnasio?', 'Dejará de aparecer en Inicio.', 'Quitar', () => { S.data.gym = null; touch(); render(); });
+ACTS['gym-fill'] = d => {
+  const o = $('#ge-qo').value, c = $('#ge-qc').value, err = $('#ge-qerr');
+  err.hidden = !!(o && c);
+  if (!o || !c) return;
+  const last = d.r === 'week' ? 4 : 6;
+  for (let i = 0; i <= last; i++) { $('#ge-o' + i).value = o; $('#ge-c' + i).value = c; }
+  toast(d.r === 'week' ? 'Horario aplicado de lunes a viernes' : 'Horario aplicado a todos los días');
+};
 ACTS['gym-manual'] = () => { S.sheet = { type: 'gymedit', isNew: true }; renderSheet(); };
 ACTS['gym-hours'] = () => { S.sheet = { type: 'gymedit', isNew: false }; renderSheet(); };
 function gymEditSheet() {
   const isNew = S.sheet.isNew, g = isNew ? {} : S.data.gym, wk = parseOH(g.hours) || [];
   return `<form class="sheet" id="gymedit-form"><div class="shead"><h2 class="stamp">${isNew ? 'Tu gimnasio' : 'Editar horario'}</h2><button type="button" class="iconbtn" data-a="close-sheet" aria-label="Cerrar">${ICON.x}</button></div>
     ${isNew ? `<div class="field"><label for="ge-n">Nombre</label><input id="ge-n" type="text" required></div><div class="field"><label for="ge-a">Dirección (opcional)</label><input id="ge-a" type="text"></div>` : ''}
-    <p class="muted small">Deja un día vacío si cierra. Si no sabes el horario, déjalo todo vacío y no se mostrará ningún estado.</p>
+    <section class="hquick" aria-label="Rellenar varios días a la vez">
+      <div class="eyebrow">Mismo horario para varios días</div>
+      <div class="hquick-times"><div class="field"><label for="ge-qo">Abre</label><input id="ge-qo" type="time" value="${wk[0] && wk[0][0] ? hm(wk[0][0][0]) : ''}"></div><div class="field"><label for="ge-qc">Cierra</label><input id="ge-qc" type="time" value="${wk[0] && wk[0][0] ? hm(wk[0][0][1]) : ''}"></div></div>
+      <div class="row2"><button type="button" class="btn slim" data-a="gym-fill" data-r="all">Todos los días</button><button type="button" class="btn line slim" data-a="gym-fill" data-r="week">Lunes a viernes</button></div>
+      <p class="err" id="ge-qerr" role="alert" hidden>Indica la hora de apertura y la de cierre.</p>
+    </section>
+    <p class="muted small">Puedes ajustar cada día abajo. Deja un día vacío si cierra. Si no sabes el horario, déjalo todo vacío y no se mostrará ningún estado.</p>
     ${WD.map((w, i) => { const r = wk[i] && wk[i][0]; return `<div class="hrow"><label for="ge-o${i}">${w}</label><input id="ge-o${i}" type="time" aria-label="${w}: apertura" value="${r ? hm(r[0]) : ''}"><input id="ge-c${i}" type="time" aria-label="${w}: cierre" value="${r ? hm(r[1]) : ''}"></div>`; }).join('')}
     <p class="err" id="ge-err" role="alert" hidden></p>
     <button class="btn go" type="submit">Guardar</button></form>`;
