@@ -420,6 +420,12 @@ a.btn { text-decoration: none; }
 .logo-load { height: var(--logo-h-loading); }
 .home-brand { display: flex; align-items: center; padding: 10px var(--gutter-r) 10px var(--gutter-l); background: var(--ground); }
 .home-brand .logo { height: var(--logo-h-header); }
+.home-brand { justify-content: space-between; gap: var(--space-3); min-height: 56px; }
+.gympill { display: flex; flex-direction: column; align-items: flex-end; min-width: 0; min-height: 44px; justify-content: center; text-align: right; padding: 2px 10px; border-radius: var(--radius-m); background: var(--plate); }
+.gp-main { font-size: 14px; font-weight: 700; white-space: nowrap; }
+.gp-main .dot { margin-right: 6px; }
+.gp-sub { font-size: 12px; font-weight: 500; color: var(--steel); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.only-desktop-inline { display: none; }
 .only-desktop { display: none; }
 .welcome-logo { margin: 0 0 var(--space-1); }
 .welcome-logo .logo-c { height: var(--logo-h-compact); }
@@ -434,6 +440,19 @@ a.btn { text-decoration: none; }
 .credit-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .nav .credit { justify-content: flex-start; }
 @media (forced-colors: active) { .logo .ls, .logo .lw { fill: CanvasText; } }
+.kb body { position: fixed; inset: 0; width: 100%; }
+.kb #app { position: fixed; top: 0; left: 0; right: 0; height: var(--vv-h); transform: translateY(var(--vv-top)); padding-top: env(safe-area-inset-top, 0px); }
+.kb .foot { position: static; background: none; }
+.kb .overlay .sheet { max-height: 100%; }
+@media (max-width: 899px) { .kb #nav, .kb #rest, .kb #banner { display: none; } }
+.chatview { height: 100%; display: flex; flex-direction: column; }
+.chatview .bar { position: static; flex: none; }
+#chat-msgs { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-1) var(--gutter-r) var(--space-3) var(--gutter-l); }
+#chat-msgs > :first-child { margin-top: auto; }
+.composer { flex: none; display: flex; gap: var(--space-2); padding: var(--space-2) var(--gutter-r) calc(var(--space-2) + env(safe-area-inset-bottom, 0px)) var(--gutter-l); background: var(--ground); border-top: 1px solid var(--plate-2); }
+.kb .composer { padding-bottom: var(--space-2); }
+.composer input { flex: 1; min-width: 0; font-size: 17px; }
+.chat-note { font-size: 13px; color: var(--steel-dim); text-align: center; }
 .cols, .daygrid, .groups { display: flex; flex-direction: column; gap: 12px; }
 
 /* Desktop: sidebar, side-by-side panels, centred dialogs */
@@ -448,6 +467,7 @@ a.btn { text-decoration: none; }
 @keyframes pop { from { transform: translateY(14px) scale(.96); opacity: 0; } }
 @keyframes unpop { to { transform: translateY(10px) scale(.97); opacity: 0; } }
 @media (min-width: 900px) {
+  .chatview { max-width: 820px; margin-inline: auto; }
   :root { --gutter-l: 40px; --gutter-r: 40px; }
   #app { max-width: none; border: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; }
   #banner { grid-column: 2; grid-row: 1; }
@@ -462,6 +482,12 @@ a.btn { text-decoration: none; }
   .only-mobile { display: none !important; }
   .only-desktop { display: block !important; }
   .only-mobile-flex { display: none !important; }
+  .only-desktop-inline { display: inline; }
+  .home-brand { position: absolute; top: 14px; right: 40px; z-index: 3; min-height: 0; padding: 0; background: none; }
+  .home-brand.no-gym { display: none; }
+  .gympill { padding: 6px 12px; }
+  .gp-sub { max-width: 320px; }
+  .home > .stack { padding-top: 78px !important; }
   .welcome-logo .logo-h { height: var(--logo-h-desktop); }
   .nav button { flex-direction: row; justify-content: flex-start; gap: 12px; min-height: 50px; padding: 0 12px; border-radius: 8px; font-size: 16px; color: var(--steel); }
   .nav button:hover { background: var(--plate-2); color: var(--chalk); }
@@ -940,7 +966,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.3';
+const APP_VERSION = '2.5';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -956,6 +982,7 @@ function place() {
   if (v === 'log') return { key: 'log:' + S.p.e, depth: 2, side: 0, seq: true };
   if (v === 'day') return { key: 'day:' + S.p.id, depth: 1, side: 0 };
   if (v === 'aiq') return { key: 'aiq:' + (S.p.step || 1), depth: 1 + (S.p.step || 1), side: 0 };
+  if (v === 'aichat') return { key: v, depth: 1, side: 0 };
   if (v === 'aigen') return { key: v, depth: 20, side: 0 };
   if (v === 'airesult') return { key: 'airesult:' + S.p.id, depth: 21, side: 0 };
   if (v === 'workout') return { key: v, depth: 1, side: 0 };
@@ -1069,6 +1096,7 @@ function render(top) {
     }
     st.shownTab = st.tab;
   }
+  if (changed && S.view === 'aichat') chatToBottom(false);
   if (animate && oldNodes.length) transition(el, oldNodes, scroll, prevPlace, now);
   prevKey = now.key; prevPlace = now;
 }
@@ -1089,7 +1117,7 @@ function renderChrome() {
   const tabs = { home: 'Inicio', routine: 'Plan', routines: 'Rutinas', progress: 'Progreso', more: 'Más', nutrition: 'Nutrición', gym: 'Gimnasio', body: 'Cuerpo', settings: 'Ajustes' };
   const ic = { home: ICON.home, routine: ICON.cal, routines: ICON.list, progress: ICON.chart, more: ICON.more, nutrition: ICON.apple, gym: ICON.pin, body: ICON.scale, settings: ICON.gear };
   const inMore = ['nutrition', 'gym', 'body', 'settings'];
-  const cur = S.view === 'day' ? 'routine' : ['aiq', 'aigen', 'airesult'].includes(S.view) ? 'routines' : S.view;
+  const cur = S.view === 'day' ? 'routine' : ['aiq', 'aigen', 'airesult'].includes(S.view) ? 'routines' : S.view === 'aichat' ? 'nutrition' : S.view;
   const box = $('#nav'), showNav = S.data && S.view !== 'setup';
   if (!showNav) box.innerHTML = '';
   else {
@@ -1413,7 +1441,7 @@ function homeView() {
   } else {
     card = `<div class="empty stack"><span>Todavía no tienes ningún día con ejercicios.</span><button class="btn go" data-a="tab" data-v="routine">Crear mi plan</button></div>`;
   }
-  return `<header class="home-brand only-mobile-flex">${logoHorizontal()}</header><div class="home"><div class="hero"><img src="${img[0]}" alt="${esc(img[1])}" decoding="sync">
+  return `<header class="home-brand ${S.data.gym ? '' : 'no-gym'}">${logoHorizontal('only-mobile')}${gymPill()}</header><div class="home"><div class="hero"><img src="${img[0]}" alt="${esc(img[1])}" decoding="sync">
       <p class="hero-top"><span>${greeting()}, ${esc(S.data.account.name)}</span></p>
       <blockquote class="hero-quote" style="margin:0"><p class="stamp">${esc(q)}</p></blockquote></div>
     <div class="pad stack" style="padding-block:10px 22px">${card}${weekStrip()}${gymHomeCard()}</div></div>`;
@@ -2386,6 +2414,13 @@ function mapUrl(g) {
   return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
 }
 const hoursSourceText = g => g.source === 'manual' ? 'Horario que has escrito' : 'Horario habitual de OpenStreetMap';
+function gymPill() {
+  const g = S.data.gym; if (!g) return '';
+  const st = gymStatus(g);
+  return `<button class="gympill" data-a="tab" data-v="gym" aria-label="${esc(g.name)}: ${st.known ? (st.open ? 'abierto ahora' : 'cerrado ahora') + ', según el horario habitual' : 'horario no disponible'}">
+    <span class="gp-main">${st.known ? `<i class="dot ${st.open ? 'on' : ''}"></i>${st.open ? 'Abierto ahora' : 'Cerrado ahora'}` : 'Horario no disponible'}</span>
+    <span class="gp-sub"><span class="only-desktop-inline">${esc(g.name)} · </span>${st.known ? 'Horario habitual' : 'Toca para añadirlo'}</span></button>`;
+}
 function gymHomeCard() {
   const g = S.data.gym; if (!g) return '';
   const st = gymStatus(g);
@@ -2535,18 +2570,28 @@ function nutritionView() {
     ${a.foods.length ? card('foods', 'Alimentos prácticos', `<div class="chips">${a.foods.map(f => `<span class="tag">${esc(f)}</span>`).join('')}</div>`) : ''}
     ${a.meals.length ? card('meals', 'Ideas de comidas', a.meals.map(m => `<div><b style="font-weight:700">${esc(m.name)}</b>${m.when ? ` <span class="dim small">${esc(m.when)}</span>` : ''}<p class="muted">${esc(m.items)}</p></div>`).join('')) : ''}
     ${a.tips.length ? card('tips', 'Según tu rutina', L(a.tips)) : ''}` : '';
-  const chat = `<section class="stack" id="nut-chat"><h2 class="eyebrow">Pregúntale a la IA</h2>
-      ${n.chat.map((m, i) => `<div class="bubble ${m.role}" data-k="m-${i}"><p>${esc(m.text).replace(/\n/g, '<br>')}</p>${m.role === 'assistant' ? `<button class="link small" data-a="nut-save-chat" data-i="${i}">${m.saved ? 'Guardado' : 'Guardar'}</button>` : ''}</div>`).join('')}
-      ${busy === 'chat' ? '<div class="bubble assistant"><div class="spin sm" role="status" aria-label="Pensando"></div></div>' : ''}
-      ${S.ai.chatErr ? `<div class="warn" role="alert"><p>${esc(S.ai.chatErr)}</p></div>` : ''}
-      ${S.ai.chatRisk ? supportCard() : ''}
-      <form id="chat-form" class="addrow"><input id="n-q" type="text" data-i="ai-q" value="${esc(S.ai.q)}" placeholder="¿Qué ceno después de entrenar?" enterkeyhint="send" aria-label="Tu pregunta"><button class="addbtn" type="submit" ${busy === 'chat' || gate ? 'disabled' : ''}>Preguntar</button></form>
-      ${n.chat.length ? '<button class="link small" data-a="nut-clear">Borrar conversación</button>' : ''}</section>`;
+  const chat = `<button class="drow" data-a="tab" data-v="aichat"><span class="moreic">${ICON.spark}</span><span class="tx"><b>Pregúntale a la IA</b><span>${n.chat.length ? 'Sigue tu conversación' : 'Dudas sobre comida, entreno y recuperación'}</span></span>${ICON.next}</button>`;
   const saved = n.saved.length ? `<section class="stack"><h2 class="eyebrow">Consejos guardados</h2>${n.saved.map(x => `<div class="aicard" data-k="${x.id}"><div class="cardhead"><b style="font-weight:700">${esc(x.title)}</b><button class="iconbtn sm" data-a="nut-unsave" data-id="${x.id}" aria-label="Quitar">${ICON.trash}</button></div><p class="muted">${esc(x.text).replace(/\n/g, '<br>')}</p></div>`).join('')}</section>` : '';
   return head + `<div class="pad" style="padding-bottom:24px"><div class="warn strong" role="note" style="margin-bottom:12px"><b>Orientación general, no consejo médico</b><p>No es un diagnóstico ni sustituye a un médico, dietista o entrenador. Si tienes una lesión, enfermedad, alergia, estás embarazada o tienes necesidades específicas, consulta antes con un profesional.</p></div>
     ${gate}
     <div class="nutcols"><div class="stack nut-a">${form}</div>${advice ? `<div class="stack nut-b" id="nut-advice">${advice}</div>` : ''}<div class="stack nut-c">${chat}${saved}</div></div></div>`;
 }
+function chatView() {
+  const n = aiNut(), busy = S.ai.busy, gate = aiGateCard('preguntar a la IA');
+  const examples = ['¿Qué ceno después de entrenar?', '¿Cuánta agua debería beber?', '¿Qué desayuno antes del gimnasio?'];
+  return `<div class="chatview"><div class="bar"><button class="iconbtn" data-a="tab" data-v="nutrition" aria-label="Volver a Nutrición">${ICON.back}</button><span class="ttl stamp">Pregúntale a la IA</span>${n.chat.length ? `<button class="iconbtn" data-a="nut-clear" aria-label="Borrar conversación">${ICON.trash}</button>` : ''}</div>
+    <div id="chat-msgs" aria-live="polite">
+      <p class="chat-note">Orientación general: no sustituye a un médico, dietista o entrenador. Si tienes una enfermedad o alergia, consulta antes con un profesional.</p>
+      ${gate}
+      ${!n.chat.length && !gate ? `<div class="chips">${examples.map(q => `<button class="chip" data-a="chat-ex" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>` : ''}
+      ${n.chat.map((m, i) => `<div class="bubble ${m.role}" data-k="m-${i}"><p>${esc(m.text).replace(/\n/g, '<br>')}</p>${m.role === 'assistant' ? `<button class="link small" data-a="nut-save-chat" data-i="${i}">${m.saved ? 'Guardado' : 'Guardar'}</button>` : ''}</div>`).join('')}
+      ${busy === 'chat' ? '<div class="bubble assistant" data-k="thinking"><div class="spin sm" role="status" aria-label="Pensando"></div></div>' : ''}
+      ${S.ai.chatErr ? `<div class="warn" role="alert"><p>${esc(S.ai.chatErr)}</p></div>` : ''}
+      ${S.ai.chatRisk ? supportCard() : ''}
+    </div>
+    <form id="chat-form" class="composer"><input id="n-q" type="text" data-i="ai-q" value="${esc(S.ai.q)}" placeholder="Escribe tu pregunta" enterkeyhint="send" autocomplete="off" aria-label="Tu pregunta"><button class="addbtn" type="submit" ${busy === 'chat' || gate ? 'disabled' : ''}>Enviar</button></form></div>`;
+}
+ACTS['chat-ex'] = d => { needConsent(() => askAI(d.q)); };
 const nutTouch = () => { touch(); render(); };
 ACTS['nut-goal'] = d => { aiP().goal = d.v; nutTouch(); };
 ACTS['nut-diet'] = d => { aiP().diet = d.v; nutTouch(); };
@@ -2582,12 +2627,13 @@ Da 4-6 comidas sencillas. Nunca incluyas alimentos que haya indicado como alergi
     }
   }
 }
+function syncChatInput() { const i = $('#n-q'); if (i) i.value = S.ai.q; }
 async function askAI(q) {
   const p = aiP(), n = aiNut();
   S.ai.chatErr = ''; S.ai.chatRisk = false;
-  if (RISK.test(q)) { S.ai.chatRisk = true; S.ai.q = ''; return render(); }
+  if (RISK.test(q)) { S.ai.chatRisk = true; S.ai.q = ''; render(); syncChatInput(); chatToBottom(true); return; }
   n.chat.push({ role: 'user', text: q }); while (n.chat.length > 30) n.chat.shift();
-  S.ai.q = ''; S.ai.busy = 'chat'; touch(); render();
+  S.ai.q = ''; S.ai.busy = 'chat'; touch(); render(); syncChatInput(); chatToBottom(true);
   const msgs = [{ role: 'system', content: SAFETY + '\nResponde a preguntas sobre entrenamiento y alimentación en texto sencillo, sin Markdown, en menos de 120 palabras. Si la pregunta no trata de esto, dilo con amabilidad.\nDatos de la persona: ' + JSON.stringify({ ...aiUserData(), alimentacion: p.diet, alergias_o_enfermedades: p.allergies || 'ninguna indicada', plan_semanal: planSummary() }) },
     ...n.chat.slice(-6).map(m => ({ role: m.role, content: m.text }))];
   try {
@@ -2596,7 +2642,8 @@ async function askAI(q) {
   } catch (e) {
     S.ai.chatErr = aiErrorText(e); S.ai.q = q; n.chat.pop();
   }
-  S.ai.busy = null; if (S.view === 'nutrition') render();
+  S.ai.busy = null;
+  if (S.view === 'aichat') { render(); syncChatInput(); chatToBottom(true); }
 }
 function addSaved(title, text) {
   const n = aiNut(); n.saved.unshift({ id: uid(), title, text, at: Date.now() }); while (n.saved.length > 50) n.saved.pop(); nutTouch(); toast('Consejo guardado');
@@ -2784,7 +2831,7 @@ const VIEWS = {
   loading: () => `<div class="pad loadscreen">${logoCompact('logo-load')}</div>`,
   syncing: () => `<div class="pad loadscreen">${logoCompact('logo-load')}<div class="spin" role="status" aria-label="Cargando"></div><p class="muted">Recuperando tu progreso</p></div>`,
   setup: setupView, home: homeView, routine: routineView, day: dayView,
-  routines: routinesView, aiq: aiqView, aigen: aiGenView, airesult: routineResultView, nutrition: nutritionView, gym: gymView, more: moreView,
+  aichat: chatView, routines: routinesView, aiq: aiqView, aigen: aiGenView, airesult: routineResultView, nutrition: nutritionView, gym: gymView, more: moreView,
   workout: workoutView, log: logView, summary: summaryView, progress: progressView, body: bodyView, settings: settingsView
 };
 ACTS['tab'] = d => go(d.v);
@@ -2915,13 +2962,35 @@ window.addEventListener('online', () => { if (cloud.user) syncNow(); });
 setInterval(() => { if (cloud.user && !document.hidden) syncNow(); }, 30000);
 setInterval(() => { if ((S.view === 'home' || S.view === 'gym') && S.data && S.data.gym && !S.sheet && !document.hidden) render(); }, 60000);
 
-/* Keep sheets above the on-screen keyboard */
+/* On-screen keyboard: the whole app follows the visible area, so nothing stays underneath */
+function keepFieldVisible() {
+  const el = document.activeElement;
+  if (!el || !el.matches('input, textarea') || el.closest('.composer')) return;
+  const box = el.closest('.sheet') || screenEl();
+  const r = el.getBoundingClientRect(), b = box.getBoundingClientRect();
+  if (r.top < b.top + 12 || r.bottom > b.bottom - 12) box.scrollTop += r.top - b.top - (b.height - r.height) / 2;
+}
+function chatToBottom(smooth) {
+  const m = $('#chat-msgs'); if (!m) return;
+  m.scrollTo({ top: m.scrollHeight, behavior: smooth && !CALM.matches ? 'smooth' : 'auto' });
+}
 function fitKeyboard() {
   const v = window.visualViewport; if (!v) return;
-  app.style.height = v.height < window.innerHeight - 80 ? v.height + 'px' : '';
-  if (window.scrollY) window.scrollTo(0, 0);
+  const root = document.documentElement, open = v.height < window.innerHeight - 100;
+  const was = root.classList.contains('kb');
+  root.classList.toggle('kb', open);
+  if (open) {
+    root.style.setProperty('--vv-h', v.height + 'px');
+    root.style.setProperty('--vv-top', v.offsetTop + 'px');
+    keepFieldVisible();
+  }
+  if (open !== was) { moveInd(); if (S.view === 'aichat') chatToBottom(false); if (!open) window.scrollTo(0, 0); }
 }
 if (window.visualViewport) { visualViewport.addEventListener('resize', fitKeyboard); visualViewport.addEventListener('scroll', fitKeyboard); }
+app.addEventListener('focusin', ev => { if (ev.target.matches && ev.target.matches('input, textarea')) { setTimeout(fitKeyboard, 60); setTimeout(fitKeyboard, 350); } });
+app.addEventListener('focusout', () => { setTimeout(fitKeyboard, 120); });
+/* Tapping Enviar keeps the keyboard open */
+app.addEventListener('mousedown', ev => { if (ev.target.closest && ev.target.closest('.composer button')) ev.preventDefault(); });
 
 /* Pull down to reload: the top image stretches instead of being cut */
 const PULL_AT = 70;
