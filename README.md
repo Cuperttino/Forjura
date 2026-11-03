@@ -2,7 +2,7 @@
 
 Web app para registrar el progreso en el gimnasio: rutina semanal, pesos, series, repeticiones, notas, temporizador de descanso, historial con gráficas y seguimiento del peso corporal con objetivo. Se adapta al móvil, con botones grandes y pocos toques, y al ordenador, con menú lateral y paneles en paralelo.
 
-No necesita cuenta ni servidor. Cada persona escribe su nombre y sus datos se quedan en su propio navegador.
+Con una cuenta de Puter, el progreso se sincroniza entre todos los dispositivos. También se puede usar sin cuenta, y entonces los datos se quedan en ese navegador.
 
 ## Publicarla con GitHub Pages
 
@@ -23,9 +23,10 @@ Una vez instalada funciona también sin conexión.
 
 ## Dónde se guardan los datos
 
-Todo se guarda en el `localStorage` del navegador de cada persona. Nada se envía a ningún servidor, así que los datos no pasan de un dispositivo a otro. Para cambiar de móvil o guardar una copia, usa **Ajustes → Descargar copia de seguridad** y luego **Restaurar una copia**.
+- **Con cuenta:** la app usa [Puter](https://puter.com) para el inicio de sesión y la nube. Cada usuario crea su cuenta en Puter, y su rutina e historial se guardan en ella, separados de los de otros usuarios. Cada dispositivo guarda además una copia local para funcionar sin conexión. El almacenamiento corre a cargo de la cuenta de cada usuario.
+- **Sin cuenta:** todo se queda en el `localStorage` de ese navegador. En iPhone conviene instalar la app en la pantalla de inicio, porque Safari puede borrar los datos de las webs que llevan varios días sin abrirse.
 
-En iPhone conviene instalar la app en la pantalla de inicio, porque Safari puede borrar los datos de las webs que llevan varios días sin abrirse.
+Si dos dispositivos cambian lo mismo sin conexión, se conserva la versión más reciente de cada sección y de cada sesión. Las copias de seguridad están en **Ajustes**.
 
 ## Estructura
 

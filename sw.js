@@ -1,5 +1,5 @@
 // Sube el número de versión al publicar cambios en imágenes o iconos.
-const CACHE = 'hierro-v2';
+const CACHE = 'hierro-v3';
 const ASSETS = [
   "./",
   "index.html",
@@ -26,6 +26,10 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
+  // Puter y el resto de servicios externos van siempre a la red; nunca se guardan copias de sus respuestas.
+  const url = new URL(req.url);
+  const own = url.origin === self.location.origin;
+  if (!own && url.hostname !== 'fonts.googleapis.com' && url.hostname !== 'fonts.gstatic.com') return;
   // La página se pide primero a la red para recibir las novedades; sin conexión se usa la copia guardada.
   if (req.mode === 'navigate') {
     e.respondWith(fetch(req.url, { cache: 'no-cache' }).then(res => {
