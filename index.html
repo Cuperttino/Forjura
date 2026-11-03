@@ -52,6 +52,7 @@ img { max-width: 100%; }
   --logo-symbol: var(--accent);
   --logo-word: var(--chalk);
   --logo-h-sidebar: 34px;
+  --logo-h-header: 30px;
   --logo-h-desktop: 84px;
   --logo-h-compact: 92px;
   --logo-h-loading: 112px;
@@ -417,6 +418,8 @@ a.btn { text-decoration: none; }
 .logo-mono { --logo-symbol: currentColor; --logo-word: currentColor; }
 .logo-on-accent { --logo-symbol: var(--on-accent); width: 72px; height: 72px; }
 .logo-load { height: var(--logo-h-loading); }
+.home-brand { display: flex; align-items: center; padding: 10px var(--gutter-r) 10px var(--gutter-l); background: var(--ground); }
+.home-brand .logo { height: var(--logo-h-header); }
 .only-desktop { display: none; }
 .welcome-logo { margin: 0 0 var(--space-1); }
 .welcome-logo .logo-c { height: var(--logo-h-compact); }
@@ -937,7 +940,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.2';
+const APP_VERSION = '2.3';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -1410,8 +1413,8 @@ function homeView() {
   } else {
     card = `<div class="empty stack"><span>Todavía no tienes ningún día con ejercicios.</span><button class="btn go" data-a="tab" data-v="routine">Crear mi plan</button></div>`;
   }
-  return `<div class="home"><div class="hero"><img src="${img[0]}" alt="${esc(img[1])}" decoding="sync">
-      <p class="hero-top"><span>${greeting()}, ${esc(S.data.account.name)}</span>${logoIcon('only-mobile-flex')}</p>
+  return `<header class="home-brand only-mobile-flex">${logoHorizontal()}</header><div class="home"><div class="hero"><img src="${img[0]}" alt="${esc(img[1])}" decoding="sync">
+      <p class="hero-top"><span>${greeting()}, ${esc(S.data.account.name)}</span></p>
       <blockquote class="hero-quote" style="margin:0"><p class="stamp">${esc(q)}</p></blockquote></div>
     <div class="pad stack" style="padding-block:10px 22px">${card}${weekStrip()}${gymHomeCard()}</div></div>`;
 }
