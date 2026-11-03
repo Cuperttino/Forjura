@@ -1,6 +1,10 @@
-# Hierro
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="brand/forjura-horizontal-claro.svg">
+  <img src="brand/forjura-horizontal-oscuro.svg" alt="FORJURA" height="72">
+</picture>
 
-Web app para registrar el progreso en el gimnasio: rutina semanal, pesos, series, repeticiones, notas, temporizador de descanso, historial con gráficas y seguimiento del peso corporal con objetivo. Se adapta al móvil, con botones grandes y pocos toques, y al ordenador, con menú lateral y paneles en paralelo.
+
+Web app para registrar el progreso en el gimnasio: rutina semanal, pesos, series, repeticiones, notas, temporizador de descanso, historial con gráficas, peso corporal con objetivo, generador de rutinas y consejos de nutrición con IA, y ficha de tu gimnasio con su horario. Se adapta al móvil, con botones grandes y pocos toques, y al ordenador, con menú lateral y paneles en paralelo.
 
 Con una cuenta de Puter, el progreso se sincroniza entre todos los dispositivos. También se puede usar sin cuenta, y entonces los datos se quedan en ese navegador.
 
@@ -28,13 +32,21 @@ Una vez instalada funciona también sin conexión.
 
 Si dos dispositivos cambian lo mismo sin conexión, se conserva la versión más reciente de cada sección y de cada sesión. Las copias de seguridad están en **Ajustes**.
 
+## Servicios externos
+
+- **IA (Puter):** rutinas y consejos. Se envían las respuestas del usuario, nunca su nombre; el peso y la altura solo con su permiso. Cada usuario paga su propio uso desde su cuenta de Puter.
+- **OpenStreetMap (Nominatim y Overpass):** búsqueda de gimnasios y horarios. Datos © colaboradores de OpenStreetMap. No da horarios en tiempo real, así que el estado se calcula con el horario habitual y se indica siempre.
+
+Lo que genera la IA es orientación general. No es un diagnóstico ni sustituye a un médico, dietista o entrenador.
+
 ## Estructura
 
 ```
 index.html             La app completa: HTML, CSS y JavaScript
 manifest.webmanifest   Nombre e iconos para instalarla
 sw.js                  Copia local para que funcione sin conexión
-icons/                 Iconos de la app
+icons/                 Iconos de la app y favicon
+brand/                 Logo en todas sus variantes (horizontal, compacto, símbolo, icono; claro, oscuro, monocromo)
 img/                   Imágenes del día (generadas por ordenador en 3D, sin derechos de terceros)
 ```
 

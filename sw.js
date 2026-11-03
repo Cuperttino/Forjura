@@ -1,12 +1,16 @@
 // Sube el número de versión al publicar cambios en imágenes o iconos.
-const CACHE = 'hierro-v3';
+const CACHE = 'forjura-v1';
 const ASSETS = [
   "./",
   "index.html",
   "manifest.webmanifest",
   "icons/icon-192.png",
   "icons/icon-512.png",
+  "icons/icon-maskable-512.png",
+  "icons/favicon-32.png",
+  "icons/favicon-16.png",
   "icons/apple-touch-icon.png",
+  "brand/forjura-favicon.svg",
   "img/gym-0.jpg",
   "img/gym-1.jpg",
   "img/gym-2.jpg",

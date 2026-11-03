@@ -1,7 +1,7 @@
 {
-  "name": "Hierro",
-  "short_name": "Hierro",
-  "description": "Registra pesos, series y descansos en el gimnasio.",
+  "name": "FORJURA",
+  "short_name": "FORJURA",
+  "description": "Registra tu entrenamiento, sigue tu progreso y crea rutinas con IA.",
   "lang": "es",
   "start_url": "./",
   "scope": "./",
@@ -20,7 +20,7 @@
       "type": "image/png"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "icons/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
