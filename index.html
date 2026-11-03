@@ -966,7 +966,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.5';
+const APP_VERSION = '2.6';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -2455,52 +2455,80 @@ function gymView() {
     <button class="btn line slim" data-a="gym-near" ${a.busy ? 'disabled' : ''}>${ICON.pin}Buscar cerca de mí</button>
     </div><div class="stack">
     ${a.busy ? `<div class="stack" style="align-items:center;padding:20px"><div class="spin" role="status" aria-label="Buscando"></div><p class="muted">${esc(a.note || 'Buscando gimnasios…')}</p></div>` : ''}
-    ${a.err ? `<div class="warn" role="alert"><p>${esc(a.err)}</p></div>` : ''}
+    ${a.err ? `<div class="warn" role="alert"><p>${esc(a.err)}</p>${a.detail ? `<p class="dim small">Detalle: ${esc(a.detail)}</p>` : ''}</div>` : ''}
     ${results && !a.busy ? (results.length ? `<h2 class="eyebrow">${results.length} ${results.length === 1 ? 'resultado' : 'resultados'}</h2>${results.map((r, i) => { const st = gymStatus(r); return `<button class="drow" data-a="gym-pick" data-i="${i}"><span class="tx"><b>${esc(r.name)}</b>${r.address ? `<span>${esc(r.address)}</span>` : ''}<span class="dim">${r.hours ? (st.known ? 'Con horario' : 'Horario sin calcular') : 'Sin horario'}</span></span>${ICON.next}</button>`; }).join('')}` : `<div class="empty">No hemos encontrado gimnasios. Prueba con otro nombre o añádelo a mano.</div>`) : ''}
     <button class="btn line slim" data-a="gym-manual">Añadir mi gimnasio a mano</button>
-    <p class="dim small">Datos de gimnasios y horarios: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" style="color:inherit">© colaboradores de OpenStreetMap</a>. Tu búsqueda se envía a su servicio.</p>
+    <p class="dim small">Datos de gimnasios y horarios: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" style="color:inherit">© colaboradores de OpenStreetMap</a>. Tu búsqueda se envía a servicios públicos de OpenStreetMap.</p>
   </div></div></div>`;
 }
 INPUTS['g-q'] = () => {};
 const addrOf = t => [[t['addr:street'], t['addr:housenumber']].filter(Boolean).join(' '), t['addr:city'] || t['addr:town'] || t['addr:village']].filter(Boolean).join(', ');
-async function fetchJson(url, opts) {
-  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 20000);
+async function fetchJson(url, opts, ms = 12000) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), ms);
   try {
     const r = await fetch(url, { ...opts, signal: ctl.signal });
-    if (!r.ok) throw new Error('http ' + r.status);
+    if (!r.ok) throw new Error('error ' + r.status);
     return await r.json();
+  } catch (e) {
+    if (e && e.name === 'AbortError') throw new Error('sin respuesta');
+    throw new Error(e && /^error /.test(e.message) ? e.message : 'sin conexión');
   } finally { clearTimeout(t); }
 }
-async function gymsAround(lat, lon, radius) {
+/* Public OpenStreetMap servers get overloaded, so each search tries several before giving up */
+const OVERPASS = ['https://overpass.private.coffee/api/interpreter', 'https://ovp.dresel.systems/api/interpreter', 'https://overpass-api.de/api/interpreter'];
+async function gymsAround(lat, lon, radius, log) {
   const q = `[out:json][timeout:15];(nwr["leisure"="fitness_centre"](around:${radius},${lat},${lon});nwr["amenity"="gym"](around:${radius},${lat},${lon});nwr["leisure"="sports_centre"]["sport"~"fitness|weightlifting|crossfit"](around:${radius},${lat},${lon}););out center tags 60;`;
-  const data = await fetchJson('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(q), headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
   const dist = (a, b) => Math.hypot(a - lat, (b - lon) * Math.cos(lat * Math.PI / 180));
-  return (data.elements || []).filter(e => e.tags && e.tags.name).map(e => {
-    const la = e.lat ?? (e.center && e.center.lat), lo = e.lon ?? (e.center && e.center.lon);
-    return { name: e.tags.name, address: addrOf(e.tags), lat: la, lon: lo, hours: e.tags.opening_hours || '', source: 'osm', osm: e.type + '/' + e.id };
-  }).filter(g => g.lat != null).sort((a, b) => dist(a.lat, a.lon) - dist(b.lat, b.lon)).slice(0, 20);
+  for (const base of OVERPASS) {
+    try {
+      const data = await fetchJson(base + '?data=' + encodeURIComponent(q));
+      return (data.elements || []).filter(e => e.tags && e.tags.name).map(e => {
+        const la = e.lat ?? (e.center && e.center.lat), lo = e.lon ?? (e.center && e.center.lon);
+        return { name: e.tags.name, address: addrOf(e.tags), lat: la, lon: lo, hours: e.tags.opening_hours || '', source: 'osm', osm: e.type + '/' + e.id };
+      }).filter(g => g.lat != null).sort((a, b) => dist(a.lat, a.lon) - dist(b.lat, b.lon)).slice(0, 20);
+    } catch (e) { log.push(new URL(base).hostname + ': ' + e.message); }
+  }
+  return null;
+}
+/* Photon has no opening hours, but it answers when the others can't */
+async function gymsPhoton(text, lat, lon, log) {
+  try {
+    let url = 'https://photon.komoot.io/api/?limit=15&osm_tag=leisure:fitness_centre&q=' + encodeURIComponent(text);
+    if (lat != null) url += `&lat=${lat}&lon=${lon}`;
+    const data = await fetchJson(url);
+    return (data.features || []).filter(f => f.properties && f.properties.name && f.geometry).map(f => {
+      const p = f.properties, [lo, la] = f.geometry.coordinates;
+      return { name: p.name, address: [[p.street, p.housenumber].filter(Boolean).join(' '), p.city].filter(Boolean).join(', '), lat: la, lon: lo, hours: '', source: 'osm', osm: String(p.osm_type || '').toLowerCase() + '/' + p.osm_id };
+    });
+  } catch (e) { log.push('photon: ' + e.message); return null; }
+}
+function gymFailed(a, log) {
+  a.err = navigator.onLine === false ? 'No hay conexión a internet.' : 'Los servicios de búsqueda no responden ahora mismo. Vuelve a probar en un rato o añade tu gimnasio a mano.';
+  a.detail = log.join(' · ');
 }
 async function gymSearch(text) {
-  const a = S.ai.gym; a.busy = true; a.err = ''; a.results = null; a.note = 'Buscando gimnasios…'; render();
+  const a = S.ai.gym, log = []; a.busy = true; a.err = ''; a.detail = ''; a.results = null; a.note = 'Buscando gimnasios…'; render();
+  let gyms = null;
   try {
-    const base = 'https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&extratags=1&limit=12&accept-language=es&q=';
-    const res = await fetchJson(base + encodeURIComponent(text));
+    const res = await fetchJson('https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&extratags=1&limit=12&accept-language=es&q=' + encodeURIComponent(text));
     const isGym = r => (r.category === 'leisure' && /fitness|sports_centre/.test(r.type)) || (r.category === 'amenity' && r.type === 'gym') || (r.extratags && r.extratags.leisure === 'fitness_centre');
-    let gyms = res.filter(isGym).map(r => ({ name: r.name || r.display_name.split(',')[0], address: r.display_name.split(',').slice(1, 4).join(',').trim(), lat: +r.lat, lon: +r.lon, hours: (r.extratags && r.extratags.opening_hours) || '', source: 'osm', osm: r.osm_type + '/' + r.osm_id }));
+    gyms = res.filter(isGym).map(r => ({ name: r.name || r.display_name.split(',')[0], address: r.display_name.split(',').slice(1, 4).join(',').trim(), lat: +r.lat, lon: +r.lon, hours: (r.extratags && r.extratags.opening_hours) || '', source: 'osm', osm: r.osm_type + '/' + r.osm_id }));
     if (!gyms.length) {
       const pl = res.find(r => r.category === 'place' || r.category === 'boundary' || r.type === 'administrative');
-      if (pl) { a.note = 'Buscando gimnasios en ' + (pl.name || text) + '…'; render(); gyms = await gymsAround(+(+pl.lat).toFixed(3), +(+pl.lon).toFixed(3), 8000); }
+      if (pl) { a.note = 'Buscando gimnasios en ' + (pl.name || text) + '…'; if (S.view === 'gym') render(); gyms = await gymsAround(+(+pl.lat).toFixed(3), +(+pl.lon).toFixed(3), 8000, log); }
     }
-    a.results = gyms;
-  } catch (e) {
-    a.err = navigator.onLine === false ? 'No hay conexión a internet.' : 'El servicio de búsqueda no responde ahora mismo. Vuelve a probar en un momento o añade tu gimnasio a mano.';
+  } catch (e) { log.push('nominatim: ' + e.message); }
+  if (!gyms || !gyms.length) {
+    const more = await gymsPhoton('gym ' + text, null, null, log);
+    if (more && (more.length || !gyms)) gyms = more;
   }
+  if (gyms) a.results = gyms; else gymFailed(a, log);
   a.busy = false; if (S.view === 'gym') render();
 }
 ACTS['gym-near'] = () => { S.sheet = { type: 'gymloc' }; renderSheet(); };
 function gymLocSheet() {
   return `<div class="sheet"><div class="shead"><h2 class="stamp">Usar tu ubicación</h2><button class="iconbtn" data-a="close-sheet" aria-label="Cerrar">${ICON.x}</button></div>
-    <p>Tu ubicación aproximada se usa una sola vez para buscar gimnasios cerca, y se envía al servicio de OpenStreetMap. No se guarda.</p>
+    <p>Tu ubicación aproximada se usa una sola vez para buscar gimnasios cerca, y se envía a servicios públicos de OpenStreetMap. No se guarda.</p>
     <p class="muted small">Tu navegador te pedirá permiso a continuación.</p>
     <button class="btn go" data-a="gym-locate">Continuar</button><button class="btn line slim" data-a="close-sheet">Ahora no</button></div>`;
 }
@@ -2508,11 +2536,16 @@ ACTS['gym-locate'] = () => {
   S.sheet = null; renderSheet();
   const a = S.ai.gym;
   if (!navigator.geolocation) { a.err = 'Tu navegador no permite usar la ubicación. Busca por nombre o ciudad.'; return render(); }
-  a.busy = true; a.err = ''; a.results = null; a.note = 'Obteniendo tu ubicación…'; render();
+  a.busy = true; a.err = ''; a.detail = ''; a.results = null; a.note = 'Obteniendo tu ubicación…'; render();
   navigator.geolocation.getCurrentPosition(async pos => {
     a.note = 'Buscando gimnasios cerca…'; if (S.view === 'gym') render();
-    try { a.results = await gymsAround(+pos.coords.latitude.toFixed(3), +pos.coords.longitude.toFixed(3), 5000); }
-    catch (e) { a.err = 'El servicio de búsqueda no responde ahora mismo. Vuelve a probar en un momento o añade tu gimnasio a mano.'; }
+    const log = [], la = +pos.coords.latitude.toFixed(3), lo = +pos.coords.longitude.toFixed(3);
+    let gyms = await gymsAround(la, lo, 5000, log);
+    if (!gyms || !gyms.length) {
+      const more = await gymsPhoton('gym', la, lo, log);
+      if (more) gyms = more.filter(g => Math.hypot(g.lat - la, (g.lon - lo) * Math.cos(la * Math.PI / 180)) < .15);
+    }
+    if (gyms) a.results = gyms; else gymFailed(a, log);
     a.busy = false; if (S.view === 'gym') render();
   }, err => {
     a.busy = false;
@@ -2579,7 +2612,7 @@ function nutritionView() {
 function chatView() {
   const n = aiNut(), busy = S.ai.busy, gate = aiGateCard('preguntar a la IA');
   const examples = ['¿Qué ceno después de entrenar?', '¿Cuánta agua debería beber?', '¿Qué desayuno antes del gimnasio?'];
-  return `<div class="chatview"><div class="bar"><button class="iconbtn" data-a="tab" data-v="nutrition" aria-label="Volver a Nutrición">${ICON.back}</button><span class="ttl stamp">Pregúntale a la IA</span>${n.chat.length ? `<button class="iconbtn" data-a="nut-clear" aria-label="Borrar conversación">${ICON.trash}</button>` : ''}</div>
+  return `<div class="chatview"><div class="bar"><button class="iconbtn" data-a="tab" data-v="nutrition" aria-label="Volver a Nutrición">${ICON.back}</button><span class="ttl stamp">Chat con IA</span>${n.chat.length ? `<button class="iconbtn" data-a="nut-clear" aria-label="Borrar conversación">${ICON.trash}</button>` : ''}</div>
     <div id="chat-msgs" aria-live="polite">
       <p class="chat-note">Orientación general: no sustituye a un médico, dietista o entrenador. Si tienes una enfermedad o alergia, consulta antes con un profesional.</p>
       ${gate}

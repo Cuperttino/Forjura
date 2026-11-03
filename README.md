@@ -35,7 +35,7 @@ Si dos dispositivos cambian lo mismo sin conexión, se conserva la versión más
 ## Servicios externos
 
 - **IA (Puter):** rutinas y consejos. Se envían las respuestas del usuario, nunca su nombre; el peso y la altura solo con su permiso. Cada usuario paga su propio uso desde su cuenta de Puter.
-- **OpenStreetMap (Nominatim y Overpass):** búsqueda de gimnasios y horarios. Datos © colaboradores de OpenStreetMap. No da horarios en tiempo real, así que el estado se calcula con el horario habitual y se indica siempre.
+- **OpenStreetMap (Nominatim, Overpass y Photon):** búsqueda de gimnasios y horarios, probando varios servidores públicos si alguno no responde. Datos © colaboradores de OpenStreetMap. No da horarios en tiempo real, así que el estado se calcula con el horario habitual y se indica siempre.
 
 Lo que genera la IA es orientación general. No es un diagnóstico ni sustituye a un médico, dietista o entrenador.
 
