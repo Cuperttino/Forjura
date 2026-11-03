@@ -327,8 +327,6 @@ details.sess summary span { font-size: 14px; color: var(--steel); }
 /* motion */
 #app { overflow: hidden; }
 #screen { position: relative; background: var(--ground); }
-.ghost { position: absolute; overflow: hidden; background: var(--ground); pointer-events: none; }
-.ghost *, .ghost *::before, .ghost *::after { animation: none !important; transition: none !important; }
 #nav, #rest, #banner { position: relative; z-index: 3; }
 .nav { position: relative; }
 .nav .ind { position: absolute; left: 0; top: 0; border-radius: 10px; background: var(--plate-2); transition: transform .32s cubic-bezier(.22,.8,.24,1), width .32s, height .32s; pointer-events: none; }
@@ -457,6 +455,33 @@ a.btn { text-decoration: none; }
 .hquick input { background: var(--ground); }
 .hquick-times { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
 .hquick-times input { min-width: 0; }
+:root { view-transition-name: none; }
+#screen { view-transition-name: screen; }
+::view-transition { pointer-events: none; }
+::view-transition-group(screen) { animation: none; overflow: clip; background: var(--ground); }
+::view-transition-image-pair(screen) { isolation: auto; }
+::view-transition-old(screen), ::view-transition-new(screen) { mix-blend-mode: normal; animation-duration: .3s; animation-timing-function: cubic-bezier(.22,.8,.24,1); animation-fill-mode: both; height: 100%; object-fit: none; object-position: top; }
+:root[data-vt=next]::view-transition-old(screen) { animation-name: vt-to-left; }
+:root[data-vt=next]::view-transition-new(screen) { animation-name: vt-from-right; }
+:root[data-vt=prev]::view-transition-old(screen) { animation-name: vt-to-right; }
+:root[data-vt=prev]::view-transition-new(screen) { animation-name: vt-from-left; }
+:root[data-vt=push]::view-transition-old(screen) { animation-name: vt-behind-left; }
+:root[data-vt=push]::view-transition-new(screen) { animation-name: vt-from-right; z-index: 2; }
+:root[data-vt=pop]::view-transition-old(screen) { animation-name: vt-to-right; z-index: 2; }
+:root[data-vt=pop]::view-transition-new(screen) { animation-name: vt-behind-return; }
+:root[data-vt=rise]::view-transition-old(screen) { animation: none; }
+:root[data-vt=rise]::view-transition-new(screen) { animation-name: vt-from-bottom; z-index: 2; }
+:root[data-vt=fade]::view-transition-old(screen) { animation: vt-fade-out .12s linear both; }
+:root[data-vt=fade]::view-transition-new(screen) { animation: vt-rise-in .24s cubic-bezier(.22,.8,.24,1) .08s both; }
+@keyframes vt-to-left { to { transform: translateX(-100%); } }
+@keyframes vt-to-right { to { transform: translateX(100%); } }
+@keyframes vt-from-right { from { transform: translateX(100%); } }
+@keyframes vt-from-left { from { transform: translateX(-100%); } }
+@keyframes vt-behind-left { to { transform: translateX(-26%); } }
+@keyframes vt-behind-return { from { transform: translateX(-26%); } }
+@keyframes vt-from-bottom { from { transform: translateY(100%); } }
+@keyframes vt-fade-out { to { opacity: 0; } }
+@keyframes vt-rise-in { from { opacity: 0; transform: translateY(10px); } }
 .cols, .daygrid, .groups { display: flex; flex-direction: column; gap: 12px; }
 
 /* Desktop: sidebar, side-by-side panels, centred dialogs */
@@ -970,7 +995,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.7';
+const APP_VERSION = '2.8';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -979,7 +1004,7 @@ const CALM = { get matches() {
 function applyMotion() { document.documentElement.classList.toggle('calm', CALM.matches); }
 const EASE = 'cubic-bezier(.22,.8,.24,1)';
 const TAB_ORDER = ['home', 'routine', 'routines', 'progress', 'more', 'nutrition', 'gym', 'body', 'settings'];
-let prevKey = null, prevPlace = null, ghostEl = null;
+let prevKey = null, prevPlace = null;
 function place() {
   const v = S.view, st = S.setup;
   if (v === 'setup') return { key: 'setup:' + st.step, depth: st.step, side: 0 };
@@ -1027,63 +1052,35 @@ function morphChildren(a, b) {
   while (cur) { const nx = cur.nextSibling; cur.remove(); cur = nx; }
 }
 function morphHTML(el, html) { const t = document.createElement('div'); t.innerHTML = html; morphChildren(el, t); }
-function clearGhost(el) {
-  if (ghostEl) { ghostEl.remove(); ghostEl = null; }
-  el.getAnimations().forEach(a => a.cancel());
-  el.style.zIndex = ''; el.style.boxShadow = ''; el.style.willChange = '';
-}
-function transition(el, oldNodes, oldScroll, from, to) {
-  const wide = window.matchMedia(WIDE).matches;
-  const push = to.depth > from.depth || (to.seq && from.seq);
-  const pop = to.depth < from.depth;
-  const r = el.getBoundingClientRect(), ar = app.getBoundingClientRect();
-  // The previous page's real elements move into a layer that plays the exit, so its images never reload
-  const g = document.createElement('div');
-  g.className = 'ghost'; g.setAttribute('aria-hidden', 'true');
-  g.style.cssText = `left:${r.left - ar.left}px;top:${r.top - ar.top}px;width:${r.width}px;height:${r.height}px`;
-  const inner = document.createElement('div');
-  inner.style.transform = `translateY(${-oldScroll}px)`;
-  oldNodes.forEach(n => inner.appendChild(n));
-  g.appendChild(inner);
-  g.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
-  app.insertBefore(g, el);
-  ghostEl = g;
-  const done = () => { g.remove(); if (ghostEl === g) ghostEl = null; el.style.zIndex = ''; el.style.boxShadow = ''; el.style.willChange = ''; };
-  if (wide) {
-    g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 110, easing: 'linear', fill: 'forwards' });
-    el.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 220, delay: 100, easing: EASE, fill: 'backwards' }).onfinish = done;
-    return;
-  }
-  el.style.willChange = 'transform'; g.style.willChange = 'transform';
-  const opts = { duration: 330, easing: EASE };
-  const shadow = '0 0 34px rgba(0,0,0,.6)';
-  if (to.rise) {
-    el.style.zIndex = 2; g.style.zIndex = 1; el.style.boxShadow = shadow;
-    el.animate([{ transform: 'translateY(100%)' }, { transform: 'none' }], opts).onfinish = done;
-  } else if (push) {
-    el.style.zIndex = 2; g.style.zIndex = 1; el.style.boxShadow = shadow;
-    el.animate([{ transform: 'translateX(100%)' }, { transform: 'none' }], opts).onfinish = done;
-    g.animate([{ transform: 'none' }, { transform: 'translateX(-28%)' }], { ...opts, fill: 'forwards' });
-  } else if (pop) {
-    el.style.zIndex = 1; g.style.zIndex = 2; g.style.boxShadow = shadow;
-    el.animate([{ transform: 'translateX(-28%)' }, { transform: 'none' }], opts);
-    g.animate([{ transform: 'none' }, { transform: 'translateX(100%)' }], { ...opts, fill: 'forwards' }).onfinish = done;
-  } else {
-    // Tabs: both pages travel together, like swiping between them
-    const dir = to.side >= from.side ? 1 : -1;
-    el.animate([{ transform: `translateX(${dir * 100}%)` }, { transform: 'none' }], opts).onfinish = done;
-    g.animate([{ transform: 'none' }, { transform: `translateX(${-dir * 100}%)` }], { ...opts, fill: 'forwards' });
-  }
+/* Screen changes use browser snapshots: the bottom menu stays put and nothing on the page is rebuilt during the movement.
+   Older browsers get a short fade instead. */
+let vtPending = false;
+function vtKind(from, to) {
+  if (window.matchMedia(WIDE).matches) return 'fade';
+  if (to.rise) return 'rise';
+  if (to.depth > from.depth || (to.seq && from.seq)) return 'push';
+  if (to.depth < from.depth) return 'pop';
+  return to.side >= from.side ? 'next' : 'prev';
 }
 function render(top) {
+  if (vtPending) return; // the pending change draws the latest state
+  const now = place(), changed = prevPlace && now.key !== prevKey;
+  if (changed && !CALM.matches && document.startViewTransition && !document.hidden) {
+    document.documentElement.dataset.vt = vtKind(prevPlace, now);
+    vtPending = true;
+    const vt = document.startViewTransition(() => { vtPending = false; drawScreen(top); });
+    if (vt.ready) vt.ready.catch(() => {});
+    if (vt.finished) vt.finished.catch(() => {});
+    return;
+  }
+  drawScreen(top);
+  if (changed && !CALM.matches && screenEl().animate) screenEl().animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160, easing: 'ease-out' });
+}
+function drawScreen(top) {
   const el = screenEl(), scroll = el.scrollTop;
   const noteEl = $('#d-note'); if (noteEl) { clearTimeout(noteT); INPUTS['d-note'](noteEl.dataset, noteEl); }
   applyMotion();
   const now = place(), changed = prevPlace && now.key !== prevKey;
-  if (changed) clearGhost(el);
-  const animate = changed && !CALM.matches && el.animate;
-  const oldNodes = animate ? [...el.childNodes] : null;
-  if (oldNodes) oldNodes.forEach(n => n.remove());
   const html = (VIEWS[S.view] || VIEWS.loading)();
   if (changed || !prevPlace) el.innerHTML = html; else morphHTML(el, html);
   el.scrollTop = top || changed ? 0 : scroll;
@@ -1101,7 +1098,6 @@ function render(top) {
     st.shownTab = st.tab;
   }
   if (changed && S.view === 'aichat') chatToBottom(false);
-  if (animate && oldNodes.length) transition(el, oldNodes, scroll, prevPlace, now);
   prevKey = now.key; prevPlace = now;
 }
 function moveInd() {
