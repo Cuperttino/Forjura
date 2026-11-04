@@ -1036,7 +1036,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.14';
+const APP_VERSION = '2.15';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -1192,20 +1192,35 @@ let audio = null;
 function unlockAudio() {
   try {
     if (!audio) { const C = window.AudioContext || window.webkitAudioContext; if (C) audio = new C(); }
-    if (audio && audio.state === 'suspended') audio.resume();
+    mixWithMusic();
+    if (audio && audio.state !== 'running') audio.resume();
   } catch (e) {}
 }
+/* mix with music from other apps instead of pausing it (where the browser allows choosing) */
+function mixWithMusic() { try { if (navigator.audioSession) navigator.audioSession.type = 'transient'; } catch (e) {} }
+/* alarm: three rounds of bright, high tones, the band that cuts through music, driven close to full level */
 function beep() {
   if (!audio) return;
   try {
+    mixWithMusic();
+    const out = audio.createDynamicsCompressor();
+    out.threshold.value = -14; out.knee.value = 4; out.ratio.value = 12; out.attack.value = .002; out.release.value = .08;
+    const master = audio.createGain(); master.gain.value = 1.6;
+    out.connect(master).connect(audio.destination);
     const t0 = audio.currentTime + .02;
-    [0, .26, .52, .95].forEach((d, i) => {
-      const o = audio.createOscillator(), g = audio.createGain();
-      o.type = 'square'; o.frequency.value = i === 3 ? 1320 : 880;
-      const len = i === 3 ? .5 : .16;
-      g.gain.setValueAtTime(.0001, t0 + d); g.gain.exponentialRampToValueAtTime(.32, t0 + d + .01); g.gain.exponentialRampToValueAtTime(.0001, t0 + d + len);
-      o.connect(g).connect(audio.destination); o.start(t0 + d); o.stop(t0 + d + len + .02);
-    });
+    const tone = (at, len, freq) => {
+      [[freq, 'square', .55], [freq * 2.01, 'sawtooth', .3]].forEach(([f, type, level]) => {
+        const o = audio.createOscillator(), g = audio.createGain();
+        o.type = type; o.frequency.value = f;
+        g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(level, at + .008);
+        g.gain.setValueAtTime(level, at + len * .7); g.gain.exponentialRampToValueAtTime(.0001, at + len);
+        o.connect(g).connect(out); o.start(at); o.stop(at + len + .02);
+      });
+    };
+    for (let round = 0; round < 3; round++) {
+      const r = t0 + round * 1.5;
+      tone(r, .17, 1319); tone(r + .22, .17, 1319); tone(r + .44, .17, 1319); tone(r + .68, .5, 1760);
+    }
   } catch (e) {}
 }
 function buzz() { try { if (navigator.vibrate) navigator.vibrate([300, 120, 300, 120, 500]); } catch (e) {} }
@@ -3134,7 +3149,7 @@ ACTS['set-motion'] = () => { S.data.settings.motion = CALM.matches; touch(); app
 ACTS['set-unit'] = d => { S.bodyDraft = null; S.data.settings.unit = d.k; S.data.settings.step = d.k === 'lb' ? 5 : 2.5; touch(); render(); };
 ACTS['set-step'] = d => { S.data.settings.step = +d.k; touch(); render(); };
 ACTS['set-rest'] = d => { S.data.settings.rest = +d.m * 60; if (!T.running) { T.dur = +d.m * 60; T.left = T.dur; saveTimer(); } touch(); render(); };
-ACTS['test-alert'] = () => { unlockAudio(); const st = S.data.settings; if (st.sound) beep(); if (st.vibrate) buzz(); toast(st.sound ? 'Si no oyes nada, sube el volumen' : 'El sonido está desactivado'); };
+ACTS['test-alert'] = () => { unlockAudio(); const st = S.data.settings; if (st.sound) beep(); if (st.vibrate) buzz(); toast(st.sound ? 'Si no oyes nada, sube el volumen y quita el modo silencio' : 'El sonido está desactivado'); };
 ACTS['open-name'] = () => { S.sheet = { type: 'name' }; renderSheet(); };
 function nameSheet() {
   return `<form class="sheet" id="name-form"><div class="shead"><h2 class="stamp">Tu nombre</h2><button type="button" class="iconbtn" data-a="close-sheet" aria-label="Cerrar">${ICON.x}</button></div>
