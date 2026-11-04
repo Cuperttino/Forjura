@@ -1036,7 +1036,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.15';
+const APP_VERSION = '2.16';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -1189,11 +1189,31 @@ function toast(msg, cls = '') {
   fx.appendChild(n); clearTimeout(toastT); toastT = setTimeout(() => n.remove(), 2600);
 }
 let audio = null;
+/* An alarm scheduled on a suspended context waits there and plays on the next resume, which on iPhone is the next tap.
+   So it is only ever scheduled on a running context, and anything unfinished is cut before a resume. */
+let alarmOut = null, alarmOwed = 0, audioKeep = null;
+function killAlarm() { try { if (alarmOut) alarmOut.disconnect(); } catch (e) {} alarmOut = null; }
+async function playAlarm() {
+  if (document.hidden) { alarmOwed = Date.now(); return; }
+  unlockAudio();
+  if (!audio) return;
+  if (audio.state !== 'running') await Promise.race([audio.resume().catch(() => {}), new Promise(r => setTimeout(r, 400))]);
+  if (audio.state === 'running' && !document.hidden) beep();
+}
+/* inaudible signal during the rest, so the phone does not put the sound to sleep before the alarm */
+function keepAudio(on) {
+  try {
+    if (audioKeep) { audioKeep.stop(); audioKeep = null; }
+    if (!on || !audio) return;
+    const o = audio.createOscillator(), g = audio.createGain();
+    g.gain.value = 0; o.connect(g).connect(audio.destination); o.start(); audioKeep = o;
+  } catch (e) {}
+}
 function unlockAudio() {
   try {
     if (!audio) { const C = window.AudioContext || window.webkitAudioContext; if (C) audio = new C(); }
     mixWithMusic();
-    if (audio && audio.state !== 'running') audio.resume();
+    if (audio && audio.state !== 'running') { killAlarm(); audio.resume(); }
   } catch (e) {}
 }
 /* mix with music from other apps instead of pausing it (where the browser allows choosing) */
@@ -1207,6 +1227,7 @@ function beep() {
     out.threshold.value = -14; out.knee.value = 4; out.ratio.value = 12; out.attack.value = .002; out.release.value = .08;
     const master = audio.createGain(); master.gain.value = 1.6;
     out.connect(master).connect(audio.destination);
+    killAlarm(); alarmOut = master;
     const t0 = audio.currentTime + .02;
     const tone = (at, len, freq) => {
       [[freq, 'square', .55], [freq * 2.01, 'sawtooth', .3]].forEach(([f, type, level]) => {
@@ -1238,6 +1259,7 @@ function restoreTimer() {
 const timerLeft = () => T.running ? Math.max(0, (T.endAt - Date.now()) / 1000) : T.left;
 let wake = null;
 async function holdScreen(on) {
+  keepAudio(on);
   try {
     if (on && !wake && navigator.wakeLock) { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); }
     if (!on && wake) { await wake.release(); wake = null; }
@@ -1272,7 +1294,7 @@ function fitFlash(n) {
 function timerFinish() {
   T.running = false; T.left = T.dur; T.shown = false; saveTimer(); holdScreen(false);
   const st = S.data ? S.data.settings : { sound: true, vibrate: true };
-  if (st.sound) { unlockAudio(); beep(); }
+  if (st.sound) playAlarm();
   if (st.vibrate) buzz();
   document.title = '¡Descanso terminado!';
   setTimeout(() => { document.title = 'FORJURA'; }, 8000);
@@ -2951,7 +2973,7 @@ function consistencyCard() {
 
 /* ========== record celebration ========== */
 function fanfare() {
-  if (!audio) return;
+  if (!audio || audio.state !== 'running') return;
   try {
     const t0 = audio.currentTime + .02;
     [523, 659, 784, 1047].forEach((f, i) => {
@@ -3149,7 +3171,7 @@ ACTS['set-motion'] = () => { S.data.settings.motion = CALM.matches; touch(); app
 ACTS['set-unit'] = d => { S.bodyDraft = null; S.data.settings.unit = d.k; S.data.settings.step = d.k === 'lb' ? 5 : 2.5; touch(); render(); };
 ACTS['set-step'] = d => { S.data.settings.step = +d.k; touch(); render(); };
 ACTS['set-rest'] = d => { S.data.settings.rest = +d.m * 60; if (!T.running) { T.dur = +d.m * 60; T.left = T.dur; saveTimer(); } touch(); render(); };
-ACTS['test-alert'] = () => { unlockAudio(); const st = S.data.settings; if (st.sound) beep(); if (st.vibrate) buzz(); toast(st.sound ? 'Si no oyes nada, sube el volumen y quita el modo silencio' : 'El sonido está desactivado'); };
+ACTS['test-alert'] = () => { const st = S.data.settings; if (st.sound) playAlarm(); if (st.vibrate) buzz(); toast(st.sound ? 'Si no oyes nada, sube el volumen y quita el modo silencio' : 'El sonido está desactivado'); };
 ACTS['open-name'] = () => { S.sheet = { type: 'name' }; renderSheet(); };
 function nameSheet() {
   return `<form class="sheet" id="name-form"><div class="shead"><h2 class="stamp">Tu nombre</h2><button type="button" class="iconbtn" data-a="close-sheet" aria-label="Cerrar">${ICON.x}</button></div>
@@ -3368,7 +3390,9 @@ app.addEventListener('pointerdown', ev => {
 app.addEventListener('click', ev => { const b = ev.target.closest('[data-step]'); if (b && ev.detail === 0) stepDraft(b.dataset.step, +b.dataset.dir); });
 document.addEventListener('pointerdown', unlockAudio, { once: true });
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) { persist(true); if (cloud.user) syncNow(); return; }
+  if (document.hidden) { killAlarm(); persist(true); if (cloud.user) syncNow(); return; }
+  if (alarmOwed) { const fresh = Date.now() - alarmOwed < 120000; alarmOwed = 0; if (fresh) playAlarm(); }
+  else if (T.running && audio && audio.state !== 'running') audio.resume().catch(() => {});
   if (T.running) holdScreen(true);
   if (cloud.user) syncNow();
 });
