@@ -482,14 +482,10 @@ a.btn { text-decoration: none; }
 @keyframes vt-from-bottom { from { transform: translateY(100%); } }
 @keyframes vt-fade-out { to { opacity: 0; } }
 @keyframes vt-rise-in { from { opacity: 0; transform: translateY(10px); } }
-.capline { display: flex; align-items: center; justify-content: center; position: relative; min-height: 24px; }
-.capline .link { position: absolute; right: 6px; min-height: 32px; letter-spacing: 0; text-transform: none; }
 .suggest { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-m); background: var(--plate); box-shadow: inset 0 0 0 1.5px var(--accent-soft); }
 .sg-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .sg-tx b { font-size: 27px; color: var(--accent); }
 .suggest .btn { width: auto; flex: none; padding-inline: 18px; }
-.platebar { width: 100%; display: block; }
-.swatch { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 6px; }
 .streak { display: flex; align-items: center; gap: var(--space-2); width: 100%; text-align: left; padding: var(--space-1) var(--space-1); font-size: 15px; color: var(--steel); min-height: 44px; }
 .streak .logo { width: 24px; height: 24px; }
 .streak b { color: var(--chalk); font-weight: 700; }
@@ -1026,7 +1022,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.9';
+const APP_VERSION = '2.10';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -1507,7 +1503,6 @@ function routineView() {
     <p class="muted">${n ? `Entrenas ${n} ${n === 1 ? 'día' : 'días'} a la semana.` : 'Todavía no has fijado días en la semana.'}</p>
     <div class="daygrid">${list.map(d => dayRow(d)).join('') || '<div class="empty">Añade tu primer día de entrenamiento.</div>'}</div>
     <button class="btn line" data-a="day-add">${ICON.plus}Añadir día</button>
-    <button class="btn line slim" data-a="open-plates">Calculadora de discos</button>
   </div>`;
 }
 ACTS['open-day'] = d => go('day', { id: d.id });
@@ -1644,7 +1639,7 @@ function renderSheet() {
     setTimeout(() => o.remove(), 190);
     return;
   }
-  const map = { timer: timerSheet, confirm: confirmSheet, group: groupSheet, ex: exSheet, exedit: exEditSheet, pickday: pickDaySheet, name: nameSheet, plates: platesSheet, card: cardSheet, aiconsent: aiConsentSheet, rtregen: rtRegenSheet, rtex: rtExSheet, rtday: rtDaySheet, toplan: toPlanSheet, gymloc: gymLocSheet, gymedit: gymEditSheet, wd: wdSheet, goal: goalSheet, height: heightSheet, bodyask: bodyAskSheet };
+  const map = { timer: timerSheet, confirm: confirmSheet, group: groupSheet, ex: exSheet, exedit: exEditSheet, pickday: pickDaySheet, name: nameSheet, card: cardSheet, aiconsent: aiConsentSheet, rtregen: rtRegenSheet, rtex: rtExSheet, rtday: rtDaySheet, toplan: toPlanSheet, gymloc: gymLocSheet, gymedit: gymEditSheet, wd: wdSheet, goal: goalSheet, height: heightSheet, bodyask: bodyAskSheet };
   const keep = el.querySelector('.overlay:not(.closing) .sheet'), same = keep && el.dataset.t === s.type;
   el.dataset.t = s.type;
   const html = `<div class="overlay" data-backdrop="1">${map[s.type]()}</div>`;
@@ -1764,7 +1759,7 @@ function logView() {
     ${last ? `<div class="last"><span class="eyebrow">Última vez · ${fmtDate(last.start)}</span><div class="lastsets">${last.sets.map(x => `<span>${setText(x)}</span>`).join('')}</div>${best ? `<span class="small muted num">Tu mejor serie: ${fmtW(best.w)} × ${best.r}</span>` : ''}</div>` : `<div class="last"><span class="muted small">Primera vez con este ejercicio. Objetivo: ${info.sets} × ${esc(info.reps)}.</span></div>`}
     ${(() => { const g = !mine.length && !editing ? suggestNext(id, s.id) : null; return g ? `<div class="suggest"><div class="sg-tx"><span class="eyebrow">Sugerencia para hoy</span><b class="stamp num">${esc(suggestText(g))}</b><span class="muted small">${esc(g.why)} Baja el peso si notas dolor.</span></div><button class="btn slim" data-a="use-suggest">Usar</button></div>` : ''; })()}
     <div>
-      <div class="stepper"><div class="cap capline"><label for="d-w">Peso (${unit()})</label><button class="link small" data-a="open-plates">Discos</button></div><div class="srow">
+      <div class="stepper"><div class="cap"><label for="d-w">Peso (${unit()})</label></div><div class="srow">
         <button class="stepbtn" data-step="w" data-dir="-1" aria-label="Bajar peso">−</button>
         <input id="d-w" class="bignum" type="text" inputmode="decimal" value="${num(dr.w)}" data-i="d-w" autocomplete="off">
         <button class="stepbtn" data-step="w" data-dir="1" aria-label="Subir peso">+</button></div></div>
@@ -2786,41 +2781,6 @@ ACTS['use-suggest'] = () => {
   ['#d-w', '#d-r'].forEach(k => { const f = $(k); if (f && f.animate && !CALM.matches) f.animate([{ transform: 'scale(1.08)' }, { transform: 'none' }], { duration: 200, easing: EASE }); });
 };
 
-/* ========== plate calculator ========== */
-const PLATE_SETS = { kg: [25, 20, 15, 10, 5, 2.5, 1.25], lb: [45, 35, 25, 10, 5, 2.5] };
-const BAR_SETS = { kg: [20, 15, 10, 0], lb: [45, 35, 25, 0] };
-const PLATE_LOOK = { kg: { 25: ['var(--p25)', 112, 15], 20: ['var(--p20)', 112, 13], 15: ['var(--p15)', 98, 11], 10: ['var(--p10)', 84, 10], 5: ['var(--p5)', 64, 8], 2.5: ['var(--p25)', 48, 7], 1.25: ['var(--steel)', 38, 6] },
-  lb: { 45: ['var(--p20)', 112, 15], 35: ['var(--p15)', 98, 12], 25: ['var(--p10)', 84, 10], 10: ['var(--p5)', 66, 8], 5: ['var(--p25)', 52, 7], 2.5: ['var(--steel)', 40, 6] } };
-function barWeight() { const u = unit(), b = S.data.settings.bars || {}; return b[u] != null ? b[u] : BAR_SETS[u][0]; }
-function platesFor(total, bar, u) {
-  let side = (total - bar) / 2, left = Math.max(0, side);
-  const list = [];
-  for (const p of PLATE_SETS[u]) { while (left >= p - 1e-6) { list.push(p); left = Math.round((left - p) * 1000) / 1000; } }
-  return { list, rest: Math.round(left * 2 * 100) / 100, tooLow: side < 0 };
-}
-function plateSVG(list, u) {
-  const look = PLATE_LOOK[u], W = 360, H = 130, cy = H / 2, cx = W / 2, bar = 34;
-  const need = list.reduce((a, p) => a + look[p][2] + 2, 0), k = Math.min(1, (W / 2 - bar / 2 - 18) / Math.max(1, need));
-  const side = dir => { let x = cx + dir * (bar / 2 + 6); return list.map(p => { const [c, h, w0] = look[p], w = w0 * k; const rx = dir > 0 ? x : x - w; x += dir * (w + 2 * k); return `<rect x="${rx.toFixed(1)}" y="${cy - h / 2}" width="${w.toFixed(1)}" height="${h}" rx="2" fill="${c}"/>`; }).join(''); };
-  return `<svg class="platebar" viewBox="0 0 ${W} ${H}" role="img" aria-label="Barra cargada: ${list.length ? list.map(p => num(p) + ' ' + u).join(', ') + ' en cada lado' : 'sin discos'}">
-    <rect x="4" y="${cy - 3}" width="${W - 8}" height="6" rx="3" fill="var(--steel)"/><rect x="${cx - bar / 2}" y="${cy - 5}" width="${bar}" height="10" rx="2" fill="var(--steel-dim)"/>${side(1)}${side(-1)}</svg>`;
-}
-function platesSheet() {
-  const sh = S.sheet, u = unit(), bar = barWeight(), w = sh.w, res = platesFor(w, bar, u);
-  const counts = []; res.list.forEach(p => { const c = counts.find(x => x.p === p); if (c) c.n++; else counts.push({ p, n: 1 }); });
-  return `<div class="sheet"><div class="shead"><h2 class="stamp">Calculadora de discos</h2><button class="iconbtn" data-a="close-sheet" aria-label="Cerrar">${ICON.x}</button></div>
-    <div class="srow"><button class="stepbtn" data-a="plates-step" data-dir="-1" aria-label="Bajar peso">−</button>
-      <input id="p-w" class="bignum" type="text" inputmode="decimal" autocomplete="off" value="${num(w)}" data-i="p-w" aria-label="Peso total en ${u}">
-      <button class="stepbtn" data-a="plates-step" data-dir="1" aria-label="Subir peso">+</button></div>
-    <div class="field"><label>Barra (${u})</label><div class="seg">${BAR_SETS[u].map(b => `<button class="${b === bar ? 'on' : ''}" data-a="plates-bar" data-v="${b}">${b ? num(b) : 'Sin barra'}</button>`).join('')}</div></div>
-    ${plateSVG(res.list, u)}
-    ${res.tooLow ? `<p class="muted">Este peso es menor que la barra.</p>` : counts.length ? `<div><p class="eyebrow">En cada lado</p><div class="chips" style="padding-top:8px">${counts.map(c => `<span class="tag"><i class="swatch" style="background:${PLATE_LOOK[u][c.p][0]}"></i>${c.n} × ${num(c.p)} ${u}</span>`).join('')}</div></div>` : `<p class="muted">Solo la barra, sin discos.</p>`}
-    ${res.rest > 0 && !res.tooLow ? `<div class="warn soft"><p>No se puede cargar exacto con estos discos: te quedas en ${num(w - res.rest)} ${u}.</p></div>` : ''}</div>`;
-}
-ACTS['open-plates'] = () => { const fromLog = S.draft && S.view === 'log'; S.sheet = { type: 'plates', w: fromLog && S.draft.w > 0 ? S.draft.w : (unit() === 'lb' ? 135 : 60) }; renderSheet(); };
-ACTS['plates-step'] = d => { S.sheet.w = Math.max(0, Math.round((S.sheet.w + +d.dir * S.data.settings.step) * 100) / 100); renderSheet(); };
-ACTS['plates-bar'] = d => { const st = S.data.settings; st.bars = st.bars || {}; st.bars[unit()] = +d.v; touch(); renderSheet(); };
-
 /* ========== consistency ========== */
 function consistency() {
   const planned = Math.max(1, days().filter(d => d.weekday != null).length);
@@ -3191,15 +3151,14 @@ app.addEventListener('keydown', ev => {
   }
   if (ev.key === 'Escape' && S.sheet) { S.sheet = null; renderSheet(); renderRest(); }
 });
-app.addEventListener('change', ev => { const el = ev.target; const fn = el.dataset && INPUTS[el.dataset.i]; if (fn && el.dataset.i !== 'p-w' && el.dataset.i !== 'g-q' && el.dataset.i !== 'ai-q' && el.dataset.i !== 'b-w' && el.dataset.i !== 'd-w' && el.dataset.i !== 'd-r' && el.dataset.i !== 'd-note') fn(el.dataset, el); });
+app.addEventListener('change', ev => { const el = ev.target; const fn = el.dataset && INPUTS[el.dataset.i]; if (fn && el.dataset.i !== 'g-q' && el.dataset.i !== 'ai-q' && el.dataset.i !== 'b-w' && el.dataset.i !== 'd-w' && el.dataset.i !== 'd-r' && el.dataset.i !== 'd-note') fn(el.dataset, el); });
 let aiFieldT;
 app.addEventListener('input', ev => { const el = ev.target; const k = el.dataset && el.dataset.i;
   if (el.dataset && el.dataset.f && S.data && el.tagName !== 'BUTTON') { aiP()[el.dataset.f] = el.value; clearTimeout(aiFieldT); aiFieldT = setTimeout(() => { touch(); if (S.view === 'nutrition' && !document.activeElement.matches('textarea')) render(); }, 500); }
-  if (k === 'p-w' && S.sheet && S.sheet.type === 'plates') { S.sheet.w = Math.max(0, parseNum(el.value)); renderSheet(); }
   if (k === 'g-q') S.ai.gym.q = el.value;
   if (k === 'ai-q') S.ai.q = el.value; if (k === 'b-w') S.bodyDraft = Math.max(0, parseNum(el.value)); if (k === 'd-w' || k === 'd-r') INPUTS[k](el.dataset, el); if (k === 'd-note') { clearTimeout(noteT); noteT = setTimeout(() => INPUTS['d-note'](el.dataset, el), 500); } });
 app.addEventListener('focusin', ev => { if (ev.target.classList && ev.target.classList.contains('bignum')) ev.target.select(); });
-app.addEventListener('focusout', ev => { if (S.view === 'nutrition' && ev.target.dataset && ev.target.dataset.f) { clearTimeout(aiFieldT); setTimeout(() => { touch(); if (S.view === 'nutrition' && !S.sheet) render(); }, 0); } if (ev.target.id === 'd-w' && S.draft) ev.target.value = num(S.draft.w); if (ev.target.id === 'd-r' && S.draft) ev.target.value = S.draft.r; if (ev.target.id === 'b-w') ev.target.value = num(S.bodyDraft, 1); if (ev.target.id === 'p-w' && S.sheet && S.sheet.type === 'plates') ev.target.value = num(S.sheet.w); });
+app.addEventListener('focusout', ev => { if (S.view === 'nutrition' && ev.target.dataset && ev.target.dataset.f) { clearTimeout(aiFieldT); setTimeout(() => { touch(); if (S.view === 'nutrition' && !S.sheet) render(); }, 0); } if (ev.target.id === 'd-w' && S.draft) ev.target.value = num(S.draft.w); if (ev.target.id === 'd-r' && S.draft) ev.target.value = S.draft.r; if (ev.target.id === 'b-w') ev.target.value = num(S.bodyDraft, 1); });
 app.addEventListener('submit', ev => {
   ev.preventDefault();
   const id = ev.target.id;
