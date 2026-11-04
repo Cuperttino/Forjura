@@ -1036,7 +1036,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.16';
+const APP_VERSION = '2.17';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -1218,30 +1218,25 @@ function unlockAudio() {
 }
 /* mix with music from other apps instead of pausing it (where the browser allows choosing) */
 function mixWithMusic() { try { if (navigator.audioSession) navigator.audioSession.type = 'transient'; } catch (e) {} }
-/* alarm: three rounds of bright, high tones, the band that cuts through music, driven close to full level */
+/* alarm: a small bell struck three times; sine partials at bell ratios, each fading on its own */
 function beep() {
   if (!audio) return;
   try {
     mixWithMusic();
-    const out = audio.createDynamicsCompressor();
-    out.threshold.value = -14; out.knee.value = 4; out.ratio.value = 12; out.attack.value = .002; out.release.value = .08;
-    const master = audio.createGain(); master.gain.value = 1.6;
-    out.connect(master).connect(audio.destination);
+    const master = audio.createGain(); master.gain.value = .55;
+    master.connect(audio.destination);
     killAlarm(); alarmOut = master;
     const t0 = audio.currentTime + .02;
-    const tone = (at, len, freq) => {
-      [[freq, 'square', .55], [freq * 2.01, 'sawtooth', .3]].forEach(([f, type, level]) => {
+    const strike = at => {
+      [[1319, .5, 1.6], [2637, .22, 1], [3640, .14, .6], [7120, .05, .25]].forEach(([f, level, decay]) => {
         const o = audio.createOscillator(), g = audio.createGain();
-        o.type = type; o.frequency.value = f;
-        g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(level, at + .008);
-        g.gain.setValueAtTime(level, at + len * .7); g.gain.exponentialRampToValueAtTime(.0001, at + len);
-        o.connect(g).connect(out); o.start(at); o.stop(at + len + .02);
+        o.frequency.value = f;
+        g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(level, at + .004);
+        g.gain.exponentialRampToValueAtTime(.0001, at + decay);
+        o.connect(g).connect(master); o.start(at); o.stop(at + decay + .02);
       });
     };
-    for (let round = 0; round < 3; round++) {
-      const r = t0 + round * 1.5;
-      tone(r, .17, 1319); tone(r + .22, .17, 1319); tone(r + .44, .17, 1319); tone(r + .68, .5, 1760);
-    }
+    [0, .55, 1.1].forEach(d => strike(t0 + d));
   } catch (e) {}
 }
 function buzz() { try { if (navigator.vibrate) navigator.vibrate([300, 120, 300, 120, 500]); } catch (e) {} }
