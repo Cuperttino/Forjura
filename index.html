@@ -1036,7 +1036,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.22';
+const APP_VERSION = '2.23';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -3091,7 +3091,7 @@ ACTS['card-save'] = async () => {
 ACTS['card-workout'] = d => {
   const s = S.sessions.find(x => x.id === d.id); if (!s) return;
   const lines = [...new Set(s.sets.map(x => String(x.group || '').trim()).filter(Boolean))];
-  openCard('workout', { title: s.dayName, at: s.start, stats: [[duration(s.end - s.start), 'Duración']], lines });
+  openCard('workout', { title: s.dayName, at: s.start, stats: [[duration(s.end - s.start), 'Duración'], [num(toDisp(s.sets.reduce((a, x) => a + x.w * x.r, 0)), 0), unit() + ' movidos']], lines });
 };
 
 /* ========== settings ========== */
