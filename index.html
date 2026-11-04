@@ -19,7 +19,6 @@
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="icons/favicon-16.png" sizes="16x16" type="image/png">
 <style>
-:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); box-sizing: border-box; }
 body { margin: 0; }
 img { max-width: 100%; }
 [hidden] { display: none !important; }
@@ -439,7 +438,7 @@ a.btn { text-decoration: none; }
 .nav .credit { justify-content: flex-start; }
 @media (forced-colors: active) { .logo .ls, .logo .lw { fill: CanvasText; } }
 .kb body { position: fixed; inset: 0; width: 100%; }
-.kb #app { position: fixed; top: 0; left: 0; right: 0; height: var(--vv-h); transform: translateY(var(--vv-top)); padding-top: env(safe-area-inset-top, 0px); }
+.kb #app { position: fixed; top: 0; left: 0; right: 0; bottom: auto; height: var(--vv-h); transform: translateY(var(--vv-top)); padding-top: env(safe-area-inset-top, 0px); }
 .kb .foot { position: static; background: none; }
 .kb .overlay .sheet { max-height: 100%; }
 @media (max-width: 899px) { .kb #nav, .kb #rest, .kb #banner { display: none; } }
@@ -589,6 +588,12 @@ a.btn { text-decoration: none; }
   .foot { padding-inline: 0; }
 }
 .calm *, .calm *::before, .calm *::after { animation-duration: .001s !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: .001s !important; }
+</style>
+<style>
+/* Full screen when installed: the app fills the whole display, and each edge bar pays for its own safe area */
+html, body { position: fixed; inset: 0; width: 100%; height: 100%; background: #0d0f12; }
+#app { position: fixed; top: 0; right: 0; bottom: 0; left: 0; height: auto; padding-top: env(safe-area-inset-top, 0px); }
+.toast { top: calc(12px + env(safe-area-inset-top, 0px)); }
 </style>
 </head>
 <body>
@@ -1022,7 +1027,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.10';
+const APP_VERSION = '2.11';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
