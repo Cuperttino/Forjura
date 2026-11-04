@@ -1036,7 +1036,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.20';
+const APP_VERSION = '2.21';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -3049,11 +3049,7 @@ async function buildCard(kind, data) {
     data.stats.forEach(([v, l], i) => { const x = M + i * colW; fitFont(g, v, colW - 20, 76); g.fillStyle = '#f2f0ea'; g.fillText(v, x, y); g.fillStyle = '#aab0b8'; g.font = `600 34px ${B}`; g.fillText(l, x, y + 48); });
     y += 130;
     const shown = data.lines.length > 7 ? data.lines.slice(0, 6) : data.lines;
-    shown.forEach(l => {
-      g.font = `700 44px ${B}`; g.fillStyle = '#f2f0ea'; const name = wrapText(g, l.name, W - M * 2 - (l.pr ? 220 : 0), 1)[0]; g.fillText(name, M, y);
-      if (l.pr) { g.font = `800 34px ${F}`; g.fillStyle = '#c8ff00'; g.textAlign = 'right'; g.fillText('RÉCORD', W - M, y); g.textAlign = 'left'; }
-      y += 74;
-    });
+    shown.forEach(l => { g.font = `700 44px ${B}`; g.fillStyle = '#f2f0ea'; g.fillText(wrapText(g, l, W - M * 2, 1)[0], M, y); y += 74; });
     if (shown.length < data.lines.length) { g.font = `600 38px ${B}`; g.fillStyle = '#aab0b8'; g.fillText('y ' + (data.lines.length - shown.length) + ' más', M, y); }
   }
   g.fillStyle = '#828991'; g.font = `600 34px ${B}`; g.fillText(dateLong.format(new Date(data.at)), M, H - 84);
@@ -3094,13 +3090,9 @@ ACTS['card-save'] = async () => {
 };
 ACTS['card-workout'] = d => {
   const s = S.sessions.find(x => x.id === d.id); if (!s) return;
-  const lines = [...new Set(s.sets.map(x => x.ex))].map(id => {
-    const sets = s.sets.filter(x => x.ex === id), top = sets.reduce((a, b) => e1rm(b.w, b.r) > e1rm(a.w, a.r) ? b : a);
-    const prior = historyFor(id, s.id).filter(h => h.start < s.start);
-    const best = prior.length ? Math.max(...prior.flatMap(h => h.sets.map(x => e1rm(x.w, x.r)))) : 0;
-    return { name: sets[0].name, pr: prior.length && e1rm(top.w, top.r) > best };
-  });
-  openCard('workout', { title: s.dayName, at: s.start, stats: [[duration(s.end - s.start), 'Duración'], [String(lines.length), lines.length === 1 ? 'Ejercicio' : 'Ejercicios']], lines });
+  const count = new Set(s.sets.map(x => x.ex)).size;
+  const lines = [...new Set(s.sets.map(x => String(x.group || '').trim()).filter(Boolean))];
+  openCard('workout', { title: s.dayName, at: s.start, stats: [[duration(s.end - s.start), 'Duración'], [String(count), count === 1 ? 'Ejercicio' : 'Ejercicios']], lines });
 };
 
 /* ========== settings ========== */
