@@ -1029,7 +1029,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.12';
+const APP_VERSION = '2.13';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -2066,7 +2066,8 @@ const AI_GOALS = { muscle: 'Ganar masa muscular', fat: 'Perder grasa', strength:
 const AI_LEVELS = { beginner: 'Principiante', intermediate: 'Intermedio', advanced: 'Avanzado' };
 const AI_EQUIP = ['Gimnasio completo', 'Máquinas', 'Barra y discos', 'Mancuernas', 'Poleas', 'Bandas elásticas', 'Solo peso corporal'];
 const AI_DIETS = ['Sin preferencia', 'Omnívora', 'Vegetariana', 'Vegana', 'Sin lactosa', 'Sin gluten'];
-const AIQ_STEPS = 8;
+const AIQ_STEPS = 9;
+const AI_SEX = { man: 'Hombre', woman: 'Mujer', none: 'Prefiero no decirlo' };
 S.ai = { busy: null, err: '', q: '', chatErr: '', adviceErr: '', safety: false, gym: { q: '', busy: false, err: '', results: null, note: '' } };
 const aiP = () => { if (!S.data.aiProfile) S.data.aiProfile = { goal: null, level: null, days: null, minutes: null, equipment: [], priority: [], limits: '', likes: '', dislikes: '', adult: null, diet: 'Sin preferencia', allergies: '', foodsNo: '', meals: 4 }; return S.data.aiProfile; };
 const aiNut = () => { if (!S.data.nutrition) S.data.nutrition = { advice: null, at: 0, chat: [], saved: [] }; return S.data.nutrition; };
@@ -2182,7 +2183,7 @@ function needConsent(next) {
 function aiConsentSheet() {
   const on = !!S.data.settings.aiBody;
   return `<div class="sheet"><div class="shead"><h2 class="stamp">Antes de usar la IA</h2><button class="iconbtn" data-a="close-sheet" aria-label="Cerrar">${ICON.x}</button></div>
-    <p>Para responderte, tus respuestas (objetivo, nivel, lesiones, alergias y preferencias) se envían a Puter y a su proveedor de IA. Tu nombre no se envía.</p>
+    <p>Para responderte, tus respuestas (objetivo, nivel, lesiones, alergias, preferencias y, para las rutinas, tu sexo si lo indicas) se envían a Puter y a su proveedor de IA. Tu nombre no se envía.</p>
     <button class="setline" data-a="consent-body" role="switch" aria-checked="${on}"><span>Incluir mi peso y mi altura<br><span class="muted small">Permite ajustar mejor los consejos. Es opcional.</span></span><span class="switch ${on ? 'on' : ''}"><i></i></span></button>
     <p class="muted small">Es orientación general. No sustituye a un médico, dietista o entrenador.</p>
     <button class="btn go" data-a="consent-yes">Aceptar y continuar</button><button class="btn line slim" data-a="close-sheet">Ahora no</button></div>`;
@@ -2220,16 +2221,17 @@ function aiqBody(step) {
   const nextBtn = (ok, label = 'Seguir') => `<div class="foot" style="padding-inline:0"><button class="btn go" data-a="aiq-next" ${ok ? '' : 'disabled'}>${label}</button></div>`;
   let b = '';
   if (step === 1) b = q('¿Cuál es tu objetivo principal?') + picks('goal', AI_GOALS);
-  if (step === 2) b = q('¿Qué experiencia tienes?') + picks('level', AI_LEVELS);
-  if (step === 3) b = q('¿Cuántos días puedes entrenar?') + `<div class="grid7">${[1, 2, 3, 4, 5, 6, 7].map(n => `<button class="bigpick ${p.days === n ? 'on' : ''}" data-a="aiq-num" data-f="days" data-v="${n}">${n}</button>`).join('')}</div>`;
-  if (step === 4) b = q('¿Cuánto dura cada sesión?') + `<div class="grid7">${[30, 45, 60, 75, 90, 120].map(n => `<button class="bigpick mins2 ${p.minutes === n ? 'on' : ''}" data-a="aiq-num" data-f="minutes" data-v="${n}">${n}<small>min</small></button>`).join('')}</div>`;
-  if (step === 5) b = q('¿Qué equipamiento tienes?') + chipsMulti('equipment', AI_EQUIP) + nextBtn(p.equipment.length > 0);
-  if (step === 6) b = q('¿Qué músculos quieres priorizar?') + `<p class="muted">Opcional. Puedes elegir varios.</p>` + chipsMulti('priority', MUSCLES) + nextBtn(true);
-  if (step === 7) b = q('¿Algo que debamos tener en cuenta?') +
-    `<div class="warn"><b>Si tienes una lesión, enfermedad o molestia</b><p>Consulta con tu médico o fisioterapeuta antes de seguir una rutina. La IA no puede valorar tu caso.</p></div>
+  if (step === 2) b = q('¿Eres hombre o mujer?') + `<p class="muted">Solo se usa para adaptar tu rutina. Puedes no indicarlo.</p>` + picks('sex', AI_SEX);
+  if (step === 3) b = q('¿Qué experiencia tienes?') + picks('level', AI_LEVELS);
+  if (step === 4) b = q('¿Cuántos días puedes entrenar?') + `<div class="grid7">${[1, 2, 3, 4, 5, 6, 7].map(n => `<button class="bigpick ${p.days === n ? 'on' : ''}" data-a="aiq-num" data-f="days" data-v="${n}">${n}</button>`).join('')}</div>`;
+  if (step === 5) b = q('¿Cuánto dura cada sesión?') + `<div class="grid7">${[30, 45, 60, 75, 90, 120].map(n => `<button class="bigpick mins2 ${p.minutes === n ? 'on' : ''}" data-a="aiq-num" data-f="minutes" data-v="${n}">${n}<small>min</small></button>`).join('')}</div>`;
+  if (step === 6) b = q('¿Qué equipamiento tienes?') + chipsMulti('equipment', AI_EQUIP) + nextBtn(p.equipment.length > 0);
+  if (step === 7) b = q('¿Qué músculos quieres priorizar?') + `<p class="muted">Opcional. Puedes elegir varios.</p>` + chipsMulti('priority', MUSCLES) + nextBtn(true);
+  if (step === 8) b = q('¿Algo que debamos tener en cuenta?') +
+    `<div class="warn"><b>Si tienes una lesión, enfermedad o molestia</b><p>Consulta con tu médico o fisioterapeuta antes de seguir una rutina. La IA no puede valorar tu caso.${p.sex === 'woman' ? ' Si estás embarazada o en el posparto, indícalo aquí y consúltalo antes con un profesional.' : ''}</p></div>
     <div class="field"><label for="q-limits">Lesiones, limitaciones o ejercicios que quieres evitar</label><textarea id="q-limits" data-f="limits" placeholder="Molestias de hombro, evitar peso muerto…">${esc(p.limits)}</textarea></div>
     <div class="field"><label>¿Tienes 18 años o más?</label><div class="seg"><button type="button" class="${p.adult === true ? 'on' : ''}" data-a="aiq-adult" data-v="1">Sí</button><button type="button" class="${p.adult === false ? 'on' : ''}" data-a="aiq-adult" data-v="0">No</button></div></div>` + nextBtn(p.adult != null);
-  if (step === 8) b = q('¿Tienes preferencias?') +
+  if (step === 9) b = q('¿Tienes preferencias?') +
     `<div class="field"><label for="q-likes">Ejercicios o máquinas favoritos</label><textarea id="q-likes" data-f="likes" placeholder="Press banca, prensa…">${esc(p.likes)}</textarea></div>
     <div class="field"><label for="q-dislikes">Ejercicios o máquinas que no quieres</label><textarea id="q-dislikes" data-f="dislikes" placeholder="Sentadilla búlgara…">${esc(p.dislikes)}</textarea></div>` + nextBtn(true, 'Generar mi rutina');
   return `${bar}<div class="stack" style="gap:14px">${b}</div>`;
@@ -2264,8 +2266,10 @@ async function generateRoutine(note) {
   const msgs = [{ role: 'system', content: SAFETY + `
 Genera una rutina de gimnasio personalizada. Responde SOLO con JSON válido, sin texto adicional, con esta forma:
 {"title":"nombre corto","summary":"una o dos frases","warnings":["avisos relacionados con lo que ha indicado"],"days":[{"name":"nombre del día","muscles":["músculos trabajados"],"why":"objetivo de la sesión en una frase","exercises":[{"name":"ejercicio","muscle":"músculo","sets":3,"reps":"8-12","rest_seconds":90}]}]}
-Reglas: exactamente ${p.days || 3} días. Ajusta el número de ejercicios para que cada sesión quepa en ${p.minutes || 60} minutos. Usa solo el equipamiento indicado. Evita lo indicado en lesiones y no deseados. Incluye favoritos si encajan. En "muscle" usa uno de: ${MUSCLES.join(', ')}.` },
-  { role: 'user', content: 'Datos de la persona:\n' + JSON.stringify(aiUserData()) + (note ? '\nCambios pedidos respecto a la anterior: ' + note : '') }];
+Reglas: exactamente ${p.days || 3} días. Ajusta el número de ejercicios para que cada sesión quepa en ${p.minutes || 60} minutos. Usa solo el equipamiento indicado. Evita lo indicado en lesiones y no deseados. Incluye favoritos si encajan. En "muscle" usa uno de: ${MUSCLES.join(', ')}.${p.sex === 'woman' ? `
+La persona es mujer. Adapta la rutina a lo que suele buscar y necesitar una mujer sin rebajarla: entrenamiento de fuerza real con progresión de carga, nada de pesos simbólicos ni de «tonificar» como excusa. Equilibra todo el cuerpo y da un papel importante a glúteos y piernas salvo que su prioridad muscular indique otra cosa, que siempre manda. Incluye trabajo de espalda, empuje y core. Prefiere saltos de peso pequeños en el tren superior y variantes con mancuernas, poleas o máquinas si encajan con su equipamiento. En "summary" explica en una frase qué se ha adaptado. Si indica embarazo o posparto, propón solo opciones prudentes y avisa en "warnings" de que debe consultar antes con un profesional. No hables del ciclo menstrual salvo que ella lo mencione.` : p.sex === 'man' ? `
+La persona es hombre: aplica una planificación equilibrada según sus datos, sin estereotipos.` : ''}` },
+  { role: 'user', content: 'Datos de la persona:\n' + JSON.stringify({ ...aiUserData(), sexo: p.sex === 'woman' ? 'mujer' : p.sex === 'man' ? 'hombre' : 'sin indicar' }) + (note ? '\nCambios pedidos respecto a la anterior: ' + note : '') }];
   try {
     let r = null;
     for (let i = 0; i < 2 && !r; i++) r = validateRoutine(parseAIJson(await aiCall(msgs, 3500)));
