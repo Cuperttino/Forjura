@@ -1,5 +1,5 @@
 // Sube el número de versión al publicar cambios en imágenes o iconos.
-const CACHE = 'forjura-v1';
+const CACHE = 'forjura-v2';
 const ASSETS = [
   "./",
   "index.html",
@@ -11,6 +11,7 @@ const ASSETS = [
   "icons/favicon-16.png",
   "icons/apple-touch-icon.png",
   "brand/forjura-favicon.svg",
+  "data/exercise-index.json",
   "img/gym-0.jpg",
   "img/gym-1.jpg",
   "img/gym-2.jpg",
@@ -33,7 +34,7 @@ self.addEventListener('fetch', e => {
   // Puter y el resto de servicios externos van siempre a la red; nunca se guardan copias de sus respuestas.
   const url = new URL(req.url);
   const own = url.origin === self.location.origin;
-  if (!own && url.hostname !== 'fonts.googleapis.com' && url.hostname !== 'fonts.gstatic.com') return;
+  if (!own && url.hostname !== 'fonts.googleapis.com' && url.hostname !== 'fonts.gstatic.com' && url.hostname !== 'raw.githubusercontent.com') return;
   // La página se pide primero a la red para recibir las novedades; sin conexión se usa la copia guardada.
   if (req.mode === 'navigate') {
     e.respondWith(fetch(req.url, { cache: 'no-cache' }).then(res => {

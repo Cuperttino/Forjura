@@ -285,8 +285,8 @@ textarea { min-height: 76px; resize: vertical; line-height: 1.35; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .adj { display: flex; gap: 8px; justify-content: center; }
 .adj .chip { min-width: 84px; justify-content: center; }
-.done-flash { position: absolute; inset: 0; z-index: 30; background: var(--accent); color: var(--on-accent); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; animation: pulse 1s ease-in-out 3; width: 100%; }
-.done-flash b { font-family: var(--stamp); font-weight: 900; font-size: clamp(60px, 18vw, 96px); line-height: .92; text-transform: uppercase; }
+.done-flash { position: fixed; top: 0; left: 0; right: 0; bottom: 0; height: 100%; height: 100lvh; z-index: 60; background: var(--accent); color: var(--on-accent); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: calc(24px + env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(24px, env(safe-area-inset-left, 0px)); text-align: center; animation: pulse 1s ease-in-out 3; width: 100%; overflow: hidden; }
+.done-flash b { display: block; width: 100%; font-family: var(--stamp); font-weight: 900; font-size: clamp(36px, 13vw, 96px); line-height: .92; text-transform: uppercase; }
 @keyframes pulse { 0%,100% { background: var(--accent); } 50% { background: #e6ff80; } }
 
 /* progress */
@@ -508,6 +508,12 @@ a.btn { text-decoration: none; }
 @keyframes prup { from { transform: translateY(16px); opacity: 0; } }
 @keyframes prring { 0% { transform: scale(.25); opacity: .85; } 100% { transform: scale(3.2); opacity: 0; } }
 .cardimg { width: 100%; max-width: 340px; margin: 0 auto; border-radius: var(--radius-m); display: block; }
+.exphoto { position: relative; margin: 0; aspect-ratio: 3 / 2; border-radius: var(--radius-m); overflow: hidden; background: var(--plate-2); }
+.exphoto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.exphoto .p2 { animation: expose 3s ease-in-out infinite; }
+@keyframes expose { 0%, 38% { opacity: 0; } 50%, 88% { opacity: 1; } 100% { opacity: 0; } }
+.calm .exphoto .p2 { display: none; }
+.howto { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
 .cols, .daygrid, .groups { display: flex; flex-direction: column; gap: 12px; }
 
 /* Desktop: sidebar, side-by-side panels, centred dialogs */
@@ -672,6 +678,7 @@ const ICON = {
   apple: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8c-2-1.8-7.5-1.4-7.5 4.5 0 4 2.6 8 5 8 1 0 1.6-.6 2.5-.6s1.5.6 2.5.6c2.4 0 5-4 5-8C19.5 6.6 14 6.2 12 8z"/><path d="M12 8c0-2 .8-4 3-5"/></svg>',
   pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5s7-6.2 7-11.5a7 7 0 1 0-14 0c0 5.3 7 11.5 7 11.5z"/><circle cx="12" cy="10" r="2.4"/></svg>',
   bookmark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M6.5 3.5h11v17l-5.5-3.8-5.5 3.8z"/></svg>',
+  info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.2"/></svg>',
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
   next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
   x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
@@ -1029,7 +1036,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.13';
+const APP_VERSION = '2.14';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -1235,6 +1242,18 @@ function timerAdjust(sec) {
   if (T.running) T.endAt = Date.now() + left * 1000;
   saveTimer(); renderTimerNow();
 }
+/* the headline must fit whole whichever font and screen width are in use */
+function fitFlash(n) {
+  const b = n.querySelector('b');
+  const fit = () => {
+    if (!n.isConnected) return;
+    b.style.fontSize = '';
+    let size = parseFloat(getComputedStyle(b).fontSize);
+    while (size > 24 && (b.scrollWidth > b.clientWidth || n.scrollHeight > n.clientHeight)) { size -= 2; b.style.fontSize = size + 'px'; }
+  };
+  fit();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+}
 function timerFinish() {
   T.running = false; T.left = T.dur; T.shown = false; saveTimer(); holdScreen(false);
   const st = S.data ? S.data.settings : { sound: true, vibrate: true };
@@ -1248,6 +1267,7 @@ function timerFinish() {
   n.className = 'done-flash'; n.dataset.a = 'dismiss-flash';
   n.innerHTML = logoSymbol('logo-on-accent') + '<b>A por la siguiente serie</b><span class="small" style="font-weight:700">Descanso terminado. Toca para seguir.</span>';
   fx.appendChild(n);
+  fitFlash(n);
   setTimeout(() => n.remove(), 7000);
   renderRest(); renderTimerNow();
 }
@@ -1646,7 +1666,7 @@ function renderSheet() {
     setTimeout(() => o.remove(), 190);
     return;
   }
-  const map = { timer: timerSheet, confirm: confirmSheet, group: groupSheet, ex: exSheet, exedit: exEditSheet, pickday: pickDaySheet, name: nameSheet, card: cardSheet, aiconsent: aiConsentSheet, rtregen: rtRegenSheet, rtex: rtExSheet, rtday: rtDaySheet, toplan: toPlanSheet, gymloc: gymLocSheet, gymedit: gymEditSheet, wd: wdSheet, goal: goalSheet, height: heightSheet, bodyask: bodyAskSheet };
+  const map = { timer: timerSheet, confirm: confirmSheet, group: groupSheet, ex: exSheet, exedit: exEditSheet, pickday: pickDaySheet, name: nameSheet, exinfo: exInfoSheet, card: cardSheet, aiconsent: aiConsentSheet, rtregen: rtRegenSheet, rtex: rtExSheet, rtday: rtDaySheet, toplan: toPlanSheet, gymloc: gymLocSheet, gymedit: gymEditSheet, wd: wdSheet, goal: goalSheet, height: heightSheet, bodyask: bodyAskSheet };
   const keep = el.querySelector('.overlay:not(.closing) .sheet'), same = keep && el.dataset.t === s.type;
   el.dataset.t = s.type;
   const html = `<div class="overlay" data-backdrop="1">${map[s.type]()}</div>`;
@@ -1761,7 +1781,7 @@ function logView() {
   const reached = mine.length >= (info.sets || 1);
   const editing = dr.edit != null;
   const setNo = editing ? mine.findIndex(o => o.i === dr.edit) + 1 : mine.length + 1;
-  return `<div class="bar"><button class="iconbtn" data-a="to-workout" aria-label="Volver al entrenamiento">${ICON.back}</button><span class="ttl stamp">${esc(info.name)}</span><button class="iconbtn" data-a="open-timer" aria-label="Abrir temporizador">${ICON.clock}</button></div>
+  return `<div class="bar"><button class="iconbtn" data-a="to-workout" aria-label="Volver al entrenamiento">${ICON.back}</button><span class="ttl stamp">${esc(info.name)}</span>${findEx(id) ? `<button class="iconbtn" data-a="log-info" data-e="${id}" aria-label="Cómo se hace">${ICON.info}</button>` : ''}<button class="iconbtn" data-a="open-timer" aria-label="Abrir temporizador">${ICON.clock}</button></div>
   <div class="pad" style="padding-bottom:22px"><div class="cols logcols"><div class="stack">
     ${last ? `<div class="last"><span class="eyebrow">Última vez · ${fmtDate(last.start)}</span><div class="lastsets">${last.sets.map(x => `<span>${setText(x)}</span>`).join('')}</div>${best ? `<span class="small muted num">Tu mejor serie: ${fmtW(best.w)} × ${best.r}</span>` : ''}</div>` : `<div class="last"><span class="muted small">Primera vez con este ejercicio. Objetivo: ${info.sets} × ${esc(info.reps)}.</span></div>`}
     ${(() => { const g = !mine.length && !editing ? suggestNext(id, s.id) : null; return g ? `<div class="suggest"><div class="sg-tx"><span class="eyebrow">Sugerencia para hoy</span><b class="stamp num">${esc(suggestText(g))}</b><span class="muted small">${esc(g.why)} Baja el peso si notas dolor.</span></div><button class="btn slim" data-a="use-suggest">Usar</button></div>` : ''; })()}
@@ -2167,7 +2187,8 @@ function validateRoutine(o) {
       const muscle = str(x.muscle, 30);
       return { id: uid(), name, muscle: MUSCLES.includes(muscle) ? muscle : (muscle || 'Otros'),
         sets: Math.max(1, Math.min(10, parseInt(x.sets, 10) || 3)), reps: str(x.reps, 20) || '8-12',
-        rest: Math.max(15, Math.min(600, parseInt(x.rest_seconds ?? x.rest, 10) || 90)) };
+        rest: Math.max(15, Math.min(600, parseInt(x.rest_seconds ?? x.rest, 10) || 90)),
+        how: strList(x.how, 3, 160), tip: str(x.tip, 200), en: str(x.en, 60) };
     }).filter(Boolean);
     return { id: uid(), name: str(d && d.name, 60) || 'Día ' + (i + 1), muscles: strList(d && d.muscles, 8, 30), why: str(d && d.why, 400), exercises: ex };
   }).filter(d => d.exercises.length);
@@ -2190,6 +2211,89 @@ function aiConsentSheet() {
 }
 ACTS['consent-body'] = () => { S.data.settings.aiBody = !S.data.settings.aiBody; touch(); renderSheet(); };
 ACTS['consent-yes'] = () => { const n = S.sheet.next; S.data.settings.aiConsent = true; touch(); S.sheet = null; renderSheet(); if (n) n(); };
+
+/* ========== exercise explanation and photo ==========
+   Photos: free-exercise-db (public domain), two frames per exercise. A photo only appears on a confident name match. */
+const PHOTO_BASE = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5/exercises/';
+const PHOTO_BY_EN = {"bench press": "Barbell_Bench_Press_-_Medium_Grip", "barbell bench press": "Barbell_Bench_Press_-_Medium_Grip", "flat bench press": "Barbell_Bench_Press_-_Medium_Grip", "lat pulldown": "Wide-Grip_Lat_Pulldown", "wide grip lat pulldown": "Wide-Grip_Lat_Pulldown", "leg curl": "Lying_Leg_Curls", "lying leg curl": "Lying_Leg_Curls", "hamstring curl": "Lying_Leg_Curls", "leg extension": "Leg_Extensions", "calf raise": "Standing_Calf_Raises", "standing calf raise": "Standing_Calf_Raises", "seated calf raise": "Seated_Calf_Raise", "dumbbell row": "One-Arm_Dumbbell_Row", "one arm dumbbell row": "One-Arm_Dumbbell_Row", "barbell row": "Bent_Over_Barbell_Row", "bent over row": "Bent_Over_Barbell_Row", "bent over barbell row": "Bent_Over_Barbell_Row", "seated row": "Seated_Cable_Rows", "seated cable row": "Seated_Cable_Rows", "cable row": "Seated_Cable_Rows", "lunge": "Dumbbell_Lunges", "lunges": "Dumbbell_Lunges", "dumbbell lunge": "Dumbbell_Lunges", "reverse lunge": "Dumbbell_Rear_Lunge", "pec deck": "Butterfly", "pec deck fly": "Butterfly", "machine fly": "Butterfly", "chest fly": "Dumbbell_Flyes", "dumbbell fly": "Dumbbell_Flyes", "cable fly": "Cable_Crossover", "cable crossover": "Cable_Crossover", "hip abductor": "Thigh_Abductor", "hip abductor machine": "Thigh_Abductor", "hip abduction": "Thigh_Abductor", "hip adductor": "Thigh_Adductor", "hip adductor machine": "Thigh_Adductor", "hip adduction": "Thigh_Adductor", "hip thrust": "Barbell_Hip_Thrust", "barbell hip thrust": "Barbell_Hip_Thrust", "glute bridge": "Barbell_Glute_Bridge", "pull up": "Pullups", "pullup": "Pullups", "pull ups": "Pullups", "pullups": "Pullups", "chin up": "Chin-Up", "push up": "Pushups", "pushup": "Pushups", "push ups": "Pushups", "pushups": "Pushups", "squat": "Barbell_Squat", "back squat": "Barbell_Squat", "barbell squat": "Barbell_Squat", "deadlift": "Barbell_Deadlift", "barbell deadlift": "Barbell_Deadlift", "romanian deadlift": "Romanian_Deadlift", "sumo deadlift": "Sumo_Deadlift", "hack squat": "Hack_Squat", "goblet squat": "Goblet_Squat", "leg press": "Leg_Press", "overhead press": "Standing_Military_Press", "military press": "Standing_Military_Press", "shoulder press": "Dumbbell_Shoulder_Press", "dumbbell shoulder press": "Dumbbell_Shoulder_Press", "lateral raise": "Side_Lateral_Raise", "dumbbell lateral raise": "Side_Lateral_Raise", "side lateral raise": "Side_Lateral_Raise", "bicep curl": "Dumbbell_Bicep_Curl", "biceps curl": "Dumbbell_Bicep_Curl", "dumbbell curl": "Dumbbell_Bicep_Curl", "dumbbell bicep curl": "Dumbbell_Bicep_Curl", "barbell curl": "Barbell_Curl", "hammer curl": "Hammer_Curls", "hammer curls": "Hammer_Curls", "preacher curl": "Preacher_Curl", "triceps pushdown": "Triceps_Pushdown", "tricep pushdown": "Triceps_Pushdown", "rope pushdown": "Triceps_Pushdown_-_Rope_Attachment", "triceps rope pushdown": "Triceps_Pushdown_-_Rope_Attachment", "skull crusher": "EZ-Bar_Skullcrusher", "skullcrusher": "EZ-Bar_Skullcrusher", "dips": "Dips_-_Triceps_Version", "dip": "Dips_-_Triceps_Version", "chest dip": "Dips_-_Chest_Version", "hanging leg raise": "Hanging_Leg_Raise", "russian twist": "Russian_Twist", "plank": "Plank", "step up": "Dumbbell_Step_Ups", "step ups": "Dumbbell_Step_Ups", "dumbbell step up": "Dumbbell_Step_Ups", "face pull": "Face_Pull", "reverse fly": "Reverse_Flyes", "rear delt fly": "Reverse_Flyes", "glute kickback": "Glute_Kickback", "good morning": "Good_Morning"};
+/* a candidate with one of these words is a different exercise unless the name also says it */
+const PHOTO_MODS = new Set(['one','single','arm','guillotine','ball','crossover','incline','decline','reverse','close','wide','narrow','band','chain','kettlebell','smith','stretch','suspended','alternate','alternating','cros','plyo','zottman','drop','twist','external','axle','floor','sled','donkey','rocking','speed','assisted']);
+const PHOTO_BY_NAME = {"press banca": "Barbell_Bench_Press_-_Medium_Grip", "press inclinado con mancuernas": "Incline_Dumbbell_Press", "press en máquina": "Machine_Bench_Press", "contractora (pec deck)": "Butterfly", "fondos": "Dips_-_Chest_Version", "aperturas en polea": "Cable_Crossover", "jalón al pecho": "Wide-Grip_Lat_Pulldown", "remo con barra": "Bent_Over_Barbell_Row", "remo en polea baja": "Seated_Cable_Rows", "dominadas": "Pullups", "peso muerto": "Barbell_Deadlift", "remo en máquina": "Leverage_Iso_Row", "sentadilla": "Barbell_Squat", "prensa": "Leg_Press", "extensión de cuádriceps": "Leg_Extensions", "curl femoral": "Lying_Leg_Curls", "peso muerto rumano": "Romanian_Deadlift", "gemelos en máquina": "Standing_Calf_Raises", "zancadas": "Dumbbell_Lunges", "press militar": "Standing_Military_Press", "elevaciones laterales": "Side_Lateral_Raise", "press de hombro en máquina": "Machine_Shoulder_Military_Press", "pájaros": "Reverse_Machine_Flyes", "face pull": "Face_Pull", "curl con barra": "Barbell_Curl", "curl con mancuernas": "Dumbbell_Bicep_Curl", "curl martillo": "Hammer_Curls", "curl en polea": "Standing_Biceps_Cable_Curl", "curl predicador": "Preacher_Curl", "extensión en polea": "Triceps_Pushdown", "press francés": "Lying_Triceps_Press", "fondos en máquina": "Dip_Machine", "extensión sobre la cabeza": "Standing_Overhead_Barbell_Triceps_Extension", "patada de tríceps": "Tricep_Dumbbell_Kickback", "crunch en máquina": "Ab_Crunch_Machine", "elevación de piernas": "Hanging_Leg_Raise", "plancha": "Plank", "rueda abdominal": "Ab_Roller", "crunch en polea": "Cable_Crunch", "hip thrust": "Barbell_Hip_Thrust", "patada de glúteo en polea": "One-Legged_Cable_Kickback", "abductores en máquina": "Thigh_Abductor", "sentadilla búlgara": "Split_Squat_with_Dumbbells"};
+let exIndex = null, exIndexLoading = false;
+function loadExIndex() {
+  if (exIndex || exIndexLoading || window.claude) return;
+  exIndexLoading = true;
+  fetch('data/exercise-index.json').then(r => r.json()).then(d => {
+    const FILL = new Set(['with', 'on', 'the', 'a', 'an', 'to', 'of', 'and', 'exercise', 'version']);
+    const toks = n => n.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').map(w => w.length > 3 ? w.replace(/s$/, '') : w).filter(w => w && !FILL.has(w));
+    exIndex = d.map(([id, name]) => ({ id, toks: new Set(toks(name)), n: toks(name).length }));
+    exIndex.toks = toks;
+    if (S.sheet && S.sheet.type === 'exinfo') renderSheet();
+  }).catch(() => {}).finally(() => { exIndexLoading = false; });
+}
+function photoIdFor(name, en) {
+  const known = PHOTO_BY_NAME[String(name || '').toLowerCase()];
+  if (known) return known;
+  const enKey = String(en || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  if (PHOTO_BY_EN[enKey]) return PHOTO_BY_EN[enKey];
+  if (!en || !exIndex) return null;
+  const q = exIndex.toks(en); if (!q.length) return null;
+  let best = null, bestScore = 0;
+  for (const c of exIndex) {
+    if ([...c.toks].some(w => PHOTO_MODS.has(w) && !q.includes(w))) continue;
+    const hit = q.filter(w => c.toks.has(w)).length, score = hit / (q.length + c.n - hit), all = hit === q.length;
+    const s2 = all ? score + .35 : score;
+    if (s2 > bestScore) { bestScore = s2; best = c; }
+  }
+  return bestScore >= .62 ? best.id : null;
+}
+function exRef(sh) {
+  if (sh.src === 'routine') return rtFind(sh.d, sh.x).e;
+  const f = findEx(sh.x); return f ? f.ex : null;
+}
+function exInfoSheet() {
+  const sh = S.sheet, e = exRef(sh);
+  if (!e) return `<div class="sheet"><p>Este ejercicio ya no está disponible.</p><button class="btn line" data-a="close-sheet">Cerrar</button></div>`;
+  const muscle = sh.src === 'routine' ? e.muscle : (findEx(sh.x) || { group: {} }).group.muscle;
+  const pid = photoIdFor(e.name, e.en);
+  const how = Array.isArray(e.how) ? e.how : [];
+  const st = aiState();
+  return `<div class="sheet"><div class="shead"><h2 class="stamp">${esc(e.name)}</h2><button class="iconbtn" data-a="close-sheet" aria-label="Cerrar">${ICON.x}</button></div>
+    ${pid ? `<figure class="exphoto" data-photo="1"><img src="${PHOTO_BASE}${encodeURI(pid)}/0.jpg" alt="Posición inicial de ${esc(e.name)}" loading="lazy"><img class="p2" src="${PHOTO_BASE}${encodeURI(pid)}/1.jpg" alt="Posición final de ${esc(e.name)}" loading="lazy"></figure>` : ''}
+    <div class="tags"><span>${esc(muscle || '')}</span><span class="num">${e.sets} × ${esc(e.reps)}</span>${e.rest ? `<span class="num">${clock(e.rest)} descanso</span>` : ''}</div>
+    ${how.length ? `<ol class="howto">${how.map(h => `<li>${esc(h)}</li>`).join('')}</ol>${e.tip ? `<p class="muted">${esc(e.tip)}</p>` : ''}`
+      : sh.busy ? '<div class="stack" style="align-items:center;padding:14px"><div class="spin" role="status" aria-label="Preparando la explicación"></div><p class="muted small">Preparando la explicación…</p></div>'
+      : sh.err ? `<div class="warn" role="alert"><p>${esc(sh.err)}</p></div><button class="btn line slim" data-a="ex-explain">Reintentar</button>`
+      : st === 'ok' ? '<button class="btn line slim" data-a="ex-explain">Ver explicación</button>'
+      : `<p class="muted small">${st === 'login' ? 'Entra con tu cuenta para ver la explicación con IA.' : 'La explicación con IA no está disponible aquí.'}</p>`}
+    <p class="dim small">${pid ? 'Foto orientativa, puede variar respecto a tu máquina o agarre. ' : ''}${how.length ? 'Explicación generada con IA. ' : ''}Para si notas dolor y pide ayuda en tu gimnasio si tienes dudas.</p>
+    ${sh.src === 'routine' ? `<button class="btn line slim" data-a="rt-ex" data-d="${sh.d}" data-x="${sh.x}">Editar ejercicio</button>` : ''}</div>`;
+}
+async function explainExercise() {
+  const sh = S.sheet; if (!sh || sh.type !== 'exinfo') return;
+  const e = exRef(sh); if (!e || sh.busy) return;
+  sh.busy = true; sh.err = ''; renderSheet();
+  const msgs = [{ role: 'system', content: SAFETY + `
+Explica cómo se hace un ejercicio de gimnasio a alguien que quiere hacerlo bien. Responde SOLO con JSON válido:
+{"how":["máximo 3 pasos cortos, de menos de 20 palabras"],"tip":"el error más común y cómo evitarlo, en una frase","en":"nombre habitual del ejercicio en inglés"}` },
+  { role: 'user', content: 'Ejercicio: ' + e.name }];
+  try {
+    const o = parseAIJson(await aiCall(msgs, 400)), how = o ? strList(o.how, 3, 160) : [];
+    if (!how.length) { const x = new Error('parse'); x.code = 'parse'; throw x; }
+    e.how = how; e.tip = str(o.tip, 200); e.en = str(o.en, 60); touch();
+  } catch (x) { sh.err = aiErrorText(x); }
+  sh.busy = false;
+  if (S.sheet === sh) renderSheet();
+}
+function openExInfo(src, d, x) {
+  loadExIndex();
+  S.sheet = { type: 'exinfo', src, d, x, busy: false, err: '' }; renderSheet();
+  const e = exRef(S.sheet);
+  if (e && !(e.how && e.how.length) && aiState() === 'ok') explainExercise();
+}
+ACTS['rt-info'] = d => openExInfo('routine', d.d, d.x);
+ACTS['log-info'] = d => openExInfo('plan', null, d.e);
+ACTS['ex-explain'] = () => explainExercise();
 
 /* ---------- Rutinas ---------- */
 function routinesView() {
@@ -2265,14 +2369,14 @@ async function generateRoutine(note) {
   const p = aiP();
   const msgs = [{ role: 'system', content: SAFETY + `
 Genera una rutina de gimnasio personalizada. Responde SOLO con JSON válido, sin texto adicional, con esta forma:
-{"title":"nombre corto","summary":"una o dos frases","warnings":["avisos relacionados con lo que ha indicado"],"days":[{"name":"nombre del día","muscles":["músculos trabajados"],"why":"objetivo de la sesión en una frase","exercises":[{"name":"ejercicio","muscle":"músculo","sets":3,"reps":"8-12","rest_seconds":90}]}]}
+{"title":"nombre corto","summary":"una o dos frases","warnings":["avisos relacionados con lo que ha indicado"],"days":[{"name":"nombre del día","muscles":["músculos trabajados"],"why":"objetivo de la sesión en una frase","exercises":[{"name":"ejercicio","muscle":"músculo","sets":3,"reps":"8-12","rest_seconds":90,"en":"nombre habitual en inglés","how":["máximo 3 pasos cortos de cómo hacerlo"],"tip":"error más común y cómo evitarlo"}]}]}
 Reglas: exactamente ${p.days || 3} días. Ajusta el número de ejercicios para que cada sesión quepa en ${p.minutes || 60} minutos. Usa solo el equipamiento indicado. Evita lo indicado en lesiones y no deseados. Incluye favoritos si encajan. En "muscle" usa uno de: ${MUSCLES.join(', ')}.${p.sex === 'woman' ? `
 La persona es mujer. Adapta la rutina a lo que suele buscar y necesitar una mujer sin rebajarla: entrenamiento de fuerza real con progresión de carga, nada de pesos simbólicos ni de «tonificar» como excusa. Equilibra todo el cuerpo y da un papel importante a glúteos y piernas salvo que su prioridad muscular indique otra cosa, que siempre manda. Incluye trabajo de espalda, empuje y core. Prefiere saltos de peso pequeños en el tren superior y variantes con mancuernas, poleas o máquinas si encajan con su equipamiento. En "summary" explica en una frase qué se ha adaptado. Si indica embarazo o posparto, propón solo opciones prudentes y avisa en "warnings" de que debe consultar antes con un profesional. No hables del ciclo menstrual salvo que ella lo mencione.` : p.sex === 'man' ? `
 La persona es hombre: aplica una planificación equilibrada según sus datos, sin estereotipos.` : ''}` },
   { role: 'user', content: 'Datos de la persona:\n' + JSON.stringify({ ...aiUserData(), sexo: p.sex === 'woman' ? 'mujer' : p.sex === 'man' ? 'hombre' : 'sin indicar' }) + (note ? '\nCambios pedidos respecto a la anterior: ' + note : '') }];
   try {
     let r = null;
-    for (let i = 0; i < 2 && !r; i++) r = validateRoutine(parseAIJson(await aiCall(msgs, 3500)));
+    for (let i = 0; i < 2 && !r; i++) r = validateRoutine(parseAIJson(await aiCall(msgs, 7000)));
     if (!r) { const e = new Error('parse'); e.code = 'parse'; throw e; }
     r.id = uid(); r.createdAt = Date.now(); r.limits = p.limits || '';
     S.data.aiDraft = r; touch();
@@ -2303,10 +2407,10 @@ function routineResultView() {
   <div class="pad stack" style="padding-bottom:18px">
     ${r.summary ? `<p class="muted">${esc(r.summary)}</p>` : ''}
     ${needsCare || r.warnings.length ? `<div class="warn strong" role="alert"><b>Consulta con un profesional</b><p>${needsCare ? `Has indicado: «${esc(needsCare)}». Enséñale esta rutina a tu médico o fisioterapeuta antes de empezar, y para si notas dolor.` : 'Revisa estos avisos antes de empezar.'}</p>${r.warnings.map(w => `<p>${esc(w)}</p>`).join('')}</div>` : ''}
-    <p class="small muted">Generada con IA: es orientación general. Toca cualquier ejercicio para editarlo.</p>
+    <p class="small muted">Generada con IA: es orientación general. Toca un ejercicio para ver cómo se hace, su foto y editarlo.</p>
     <div class="groups">${r.days.map(d => `<section class="gcard" data-k="${d.id}">
       <button class="dayhead" data-a="rt-day" data-d="${d.id}"><h3 class="stamp">${esc(d.name)}</h3>${d.muscles.length ? `<span class="eyebrow">${esc(d.muscles.join(' · '))}</span>` : ''}${d.why ? `<span class="muted small">${esc(d.why)}</span>` : ''}</button>
-      ${d.exercises.map(e => `<button class="exrow" data-k="${e.id}" data-a="rt-ex" data-d="${d.id}" data-x="${e.id}"><span class="n">${esc(e.name)}<br><span class="dim small">${esc(e.muscle)}</span></span><span class="m num">${e.sets} × ${esc(e.reps)}<br><span class="dim small">${clock(e.rest)} desc.</span></span></button>`).join('')}
+      ${d.exercises.map(e => `<button class="exrow" data-k="${e.id}" data-a="rt-info" data-d="${d.id}" data-x="${e.id}"><span class="n">${esc(e.name)}<br><span class="dim small">${esc(e.muscle)}</span></span><span class="m num">${e.sets} × ${esc(e.reps)}<br><span class="dim small">${clock(e.rest)} desc.</span></span></button>`).join('')}
       <button class="exrow" style="color:var(--accent);font-weight:700" data-a="rt-add" data-d="${d.id}">${ICON.plus}<span class="n">Añadir ejercicio</span></button>
     </section>`).join('')}</div>
     <div class="row2">${isDraft ? '<button class="btn line slim" data-a="rt-save">Guardar</button>' : ''}<button class="btn line slim" data-a="rt-regen" ${isDraft ? '' : 'style="grid-column:1/-1"'}>${ICON.spark}Regenerar</button></div>
@@ -2377,7 +2481,7 @@ function applyToPlan(r, weekdays, mode) {
     d.exercises.forEach(e => {
       let g = groups.find(x => x.muscle === e.muscle);
       if (!g) { g = { id: uid(), muscle: e.muscle, exercises: [] }; groups.push(g); }
-      g.exercises.push({ id: known.get(e.name.toLowerCase()) || uid(), name: e.name, sets: e.sets, reps: e.reps, rest: e.rest });
+      g.exercises.push({ id: known.get(e.name.toLowerCase()) || uid(), name: e.name, sets: e.sets, reps: e.reps, rest: e.rest, how: e.how, tip: e.tip, en: e.en });
     });
     return { id: uid(), name: d.name, weekday: weekdays[i], groups };
   });
@@ -3112,7 +3216,7 @@ function loadDemo() {
   data.days = ds; data.setupDone = true;
   data.gym = { name: 'Gimnasio de ejemplo', address: 'Calle de ejemplo, 1', lat: null, lon: null, hours: 'Mo-Fr 07:00-22:30; Sa 09:00-14:00; Su off', source: 'manual' };
   data.aiRoutines = [{ id: 'demo-r', createdAt: now - 3 * 864e5, title: 'Ejemplo: fuerza en 2 días', summary: 'Rutina de ejemplo para ver cómo se muestran los resultados. No la ha generado la IA.', warnings: [], limits: '', days: [
-    { id: 'demo-a', name: 'Día A: empuje', muscles: ['Pecho', 'Hombros', 'Tríceps'], why: 'Trabajar los movimientos básicos de empuje.', exercises: [{ id: 'dx1', name: 'Press banca', muscle: 'Pecho', sets: 4, reps: '6-8', rest: 120 }, { id: 'dx2', name: 'Press militar', muscle: 'Hombros', sets: 3, reps: '8-10', rest: 90 }, { id: 'dx3', name: 'Extensión en polea', muscle: 'Tríceps', sets: 3, reps: '10-12', rest: 60 }] },
+    { id: 'demo-a', name: 'Día A: empuje', muscles: ['Pecho', 'Hombros', 'Tríceps'], why: 'Trabajar los movimientos básicos de empuje.', exercises: [{ id: 'dx1', name: 'Press banca', muscle: 'Pecho', sets: 4, reps: '6-8', rest: 120, how: ['Túmbate con los pies firmes y las escápulas juntas.', 'Baja la barra controlada hasta el pecho.', 'Empuja hacia arriba sin levantar la espalda del banco.'], tip: 'Error común: rebotar la barra en el pecho. Baja despacio.' }, { id: 'dx2', name: 'Press militar', muscle: 'Hombros', sets: 3, reps: '8-10', rest: 90 }, { id: 'dx3', name: 'Extensión en polea', muscle: 'Tríceps', sets: 3, reps: '10-12', rest: 60 }] },
     { id: 'demo-b', name: 'Día B: tirón y pierna', muscles: ['Espalda', 'Piernas'], why: 'Fortalecer espalda y piernas.', exercises: [{ id: 'dx4', name: 'Jalón al pecho', muscle: 'Espalda', sets: 4, reps: '8-10', rest: 90 }, { id: 'dx5', name: 'Prensa', muscle: 'Piernas', sets: 4, reps: '10-12', rest: 90 }] }] }];
   const blog = []; for (let k = 8; k >= 0; k--) blog.push({ t: now - k * 7 * 864e5, kg: Math.round((78.6 - (8 - k) * .32 + (k % 3 === 0 ? .3 : 0)) * 10) / 10 });
   data.body = { height: 178, goal: 75, goalFrom: blog[0].kg, asked: true, log: blog };
@@ -3234,6 +3338,7 @@ app.addEventListener('submit', ev => {
   }
   if (id === 'name-form') { const v = $('#n-name').value.trim(); if (v) { S.data.account.name = v; touch(); } S.sheet = null; render(); }
 });
+app.addEventListener('error', ev => { const f = ev.target.closest && ev.target.closest('[data-photo]'); if (f) f.remove(); }, true);
 /* hold-to-repeat steppers */
 let holdT = null, holdI = null;
 const stopHold = () => { clearTimeout(holdT); clearInterval(holdI); holdT = holdI = null; };
