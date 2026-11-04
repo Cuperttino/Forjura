@@ -337,7 +337,7 @@ details.sess summary span { font-size: 14px; color: var(--steel); }
 @keyframes drop { to { transform: translateY(100%); } }
 .restbar.in { animation: barup .28s cubic-bezier(.22,.8,.24,1); }
 @keyframes barup { from { transform: translateY(100%); } }
-.ring { transition: stroke-dashoffset .25s linear, stroke .25s; }
+.dial-ring { transition: stroke-dashoffset .25s linear, stroke .25s; }
 .minbtn { transition: background-color .18s, color .18s, box-shadow .18s, transform .12s; }
 .minbtn:active, .chip:active, .drow:active, .work:active, .tpl:active, .dayrow:active, .exrow:active { transform: scale(.975); }
 .drow, .work, .tpl, .dayrow, .exrow, .chip, .setline { transition: background-color .16s, color .16s, box-shadow .16s, transform .12s; }
@@ -1036,7 +1036,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.17';
+const APP_VERSION = '2.18';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -1344,7 +1344,7 @@ function timerSheet() {
       <svg viewBox="0 0 320 320" aria-hidden="true">
         <circle cx="160" cy="160" r="158" fill="var(--ground)"/>
         <circle cx="160" cy="160" r="142" fill="none" stroke="var(--plate-2)" stroke-width="20"/>
-        <circle id="dial-r" class="ring" cx="160" cy="160" r="142" fill="none" stroke="${c}" stroke-width="20" stroke-linecap="round" stroke-dasharray="${DIAL_C}" stroke-dashoffset="${DIAL_C * (1 - left / T.dur)}"/>
+        <circle id="dial-r" class="dial-ring" cx="160" cy="160" r="142" fill="none" stroke="${c}" stroke-width="20" stroke-linecap="round" stroke-dasharray="${DIAL_C}" stroke-dashoffset="${DIAL_C * (1 - left / T.dur)}"/>
         ${ticks}
       </svg>
       <div class="read"><b id="dial-t" aria-live="off">${clock(left)}</b><span class="muted small">${T.running ? 'descansando' : (left < T.dur ? 'en pausa' : 'preparado')}</span></div>
