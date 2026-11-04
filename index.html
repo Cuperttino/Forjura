@@ -1036,7 +1036,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.19';
+const APP_VERSION = '2.20';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -1982,6 +1982,7 @@ function progressView() {
     <section><h2 class="eyebrow" style="padding-block:14px 2px">Sesiones</h2>
       ${[...fin].reverse().slice(0, 30).map(s => `<details class="sess"><summary><span><b>${esc(s.dayName)}</b><span>${fmtDate(s.start)} · ${duration(s.end - s.start)} · ${s.sets.length} series</span></span>${ICON.next.replace('<svg', '<svg width="20" height="20" style="color:var(--steel-dim);flex:none"')}</summary>
         <div class="stack" style="padding-bottom:12px;gap:6px">${[...new Set(s.sets.map(x => x.ex))].map(id => { const st = s.sets.filter(x => x.ex === id); return `<div><span style="font-weight:600">${esc(st[0].name)}</span><br><span class="num muted">${st.map(setText).join(' · ')}</span></div>`; }).join('')}
+        <button class="btn line slim" data-a="card-workout" data-id="${s.id}">Crear tarjeta para compartir</button>
         <button class="btn danger slim" data-a="sess-del" data-id="${s.id}">Eliminar sesión</button></div></details>`).join('')}</section>
   </div></div></div>`;
 }
