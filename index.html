@@ -111,6 +111,17 @@ h1, h2, h3 { text-wrap: balance; }
 .addbtn { flex: none; min-height: 54px; padding: 0 18px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font-weight: 700; }
 .chip svg, .exrow svg { width: 18px; height: 18px; flex: none; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.mchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.mchip { padding: 5px 10px; border-radius: 14px; background: var(--plate-2); font-size: 14px; font-weight: 600; color: var(--chalk); }
+.mchip small { font-weight: 500; color: var(--steel); margin-left: 6px; font-size: 13px; }
+.mchip.on { background: var(--accent); color: var(--on-accent); }
+.mrow { display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: center; }
+.mbadge { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--plate-2); color: var(--steel-dim); flex: none; }
+.mbadge svg { width: 22px; height: 22px; }
+.mbadge.on { background: var(--accent); color: var(--on-accent); }
+.mbar { display: block; height: 6px; border-radius: 3px; background: var(--plate-2); overflow: hidden; }
+.mbar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.strow { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 10px 0; border-top: 1px solid var(--plate-2); min-height: 48px; }
 
 /* fields */
 .field { display: flex; flex-direction: column; gap: 6px; }
@@ -1036,7 +1047,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.23';
+const APP_VERSION = '2.24';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -1506,6 +1517,85 @@ function weekStrip() {
     return `<div class="wd ${i === t ? 'today' : ''}" aria-label="${WD[i]}${done ? ', entrenado' : planned ? ', planificado' : ''}">${w}<i class="${m}"></i></div>`;
   }).join('')}</div>`;
 }
+/* ========== week summary, muscles, medals, estimated strength ========== */
+const volOf = list => list.reduce((a, s) => a + s.sets.reduce((b, x) => b + x.w * x.r, 0), 0);
+const setGroup = x => { const f = findEx(x.ex); return f ? f.group.muscle : x.group; };
+function weekCard() {
+  const fin = finished(); if (!fin.length && !days().length) return '';
+  const ws = startOfWeek(Date.now()), d = new Date(ws); d.setDate(d.getDate() - 7); const prevWs = d.getTime();
+  const cur = fin.filter(s => s.start >= ws), last = fin.filter(s => s.start >= prevWs && s.start < ws);
+  const vc = volOf(cur), vl = volOf(last), u = unit();
+  const lastHit = {};
+  for (const s of fin) for (const x of s.sets) { const g = String(setGroup(x) || '').trim(); if (g && (!lastHit[g] || s.start > lastHit[g])) lastHit[g] = s.start; }
+  const muscles = [...new Set([...days().flatMap(dd => dd.groups.map(g => g.muscle)), ...Object.keys(lastHit)].map(m => String(m || '').trim()).filter(Boolean))];
+  const today = startOfDay(Date.now());
+  const chip = m => {
+    const t = lastHit[m];
+    if (t && t >= ws) return `<span class="mchip on">${esc(m)}</span>`;
+    const ago = t ? Math.round((today - startOfDay(t)) / 864e5) : null;
+    return `<span class="mchip">${esc(m)}<small>${ago == null ? 'sin registrar' : ago === 1 ? 'ayer' : 'hace ' + ago + ' d'}</small></span>`;
+  };
+  const cmp = (now, before, fmt) => before ? `Semana pasada: ${fmt(before)}` : 'Semana pasada: nada';
+  return `<section class="aicard stack" aria-label="Resumen de esta semana"><h2 class="eyebrow">Esta semana</h2>
+    <div class="stats" style="grid-template-columns:1fr 1fr;background:none;gap:0">
+      <div style="padding-left:0"><b>${cur.length}</b><span>${cur.length === 1 ? 'Sesión' : 'Sesiones'}</span><span class="dim small" style="display:block">${cmp(cur.length, last.length, n => n + (n === 1 ? ' sesión' : ' sesiones'))}</span></div>
+      <div><b>${num(toDisp(vc), 0)}</b><span>${u} movidos</span><span class="dim small" style="display:block">${cmp(vc, vl, v => num(toDisp(v), 0) + ' ' + u)}</span></div></div>
+    ${muscles.length ? `<h3 class="eyebrow" style="font-size:12px">Músculos</h3><div class="mchips">${muscles.map(chip).join('')}</div><p class="dim small">En verde, los que ya has entrenado esta semana.</p>` : ''}</section>`;
+}
+const MEDALS = [
+  { k: 'n', title: 'Entrenos', steps: [1, 10, 25, 50, 100, 250], fmt: v => v + (v === 1 ? ' entreno' : ' entrenos') },
+  { k: 'kg', title: 'Kilos movidos', steps: [10000, 50000, 100000, 250000, 500000, 1000000], fmt: v => num(v, 0) + ' ' + unit() },
+  { k: 'pr', title: 'Récords', steps: [1, 10, 25, 50, 100], fmt: v => v + (v === 1 ? ' récord' : ' récords') },
+  { k: 'wk', title: 'Semanas seguidas', steps: [2, 4, 8, 12, 26], fmt: v => v + ' semanas seguidas' }
+];
+/* totals, plus the session in which each medal was won (weeks have no single session) */
+function medalState() {
+  const fin = finished().slice().sort((a, b) => a.start - b.start), best = {}, won = {};
+  const tot = { n: 0, kg: 0, pr: 0, wk: consistency().best };
+  for (const s of fin) {
+    tot.n++; tot.kg += volOf([s]);
+    const top = {};
+    for (const x of s.sets) if (x.w > 0) top[x.ex] = Math.max(top[x.ex] || 0, e1rm(x.w, x.r));
+    for (const id in top) { if (best[id] != null && top[id] > best[id]) tot.pr++; best[id] = Math.max(best[id] || 0, top[id]); }
+    for (const m of MEDALS) if (m.k !== 'wk') { const v = m.k === 'kg' ? toDisp(tot.kg) : tot[m.k]; for (const st of m.steps) if (v >= st && !won[m.k + st]) won[m.k + st] = s.id; }
+  }
+  tot.kg = toDisp(tot.kg);
+  return { tot, won };
+}
+const MEDAL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="15" r="6"/><path d="M8.5 9.8 6 3h4l2 4 2-4h4l-2.5 6.8"/></svg>';
+function medalsCard() {
+  const { tot } = medalState();
+  let have = 0, all = 0;
+  const rows = MEDALS.map(m => {
+    const v = tot[m.k], got = m.steps.filter(st => v >= st), next = m.steps.find(st => v < st);
+    have += got.length; all += m.steps.length;
+    const pct = next ? Math.min(100, Math.round(v / next * 100)) : 100;
+    return `<div class="mrow"><span class="mbadge ${got.length ? 'on' : ''}">${MEDAL_ICON}</span><span class="stack" style="gap:4px;min-width:0">
+      <span><b>${m.title}</b> <span class="muted small">${got.length}/${m.steps.length}</span></span>
+      <span class="small muted">${got.length ? 'Tienes: ' + m.fmt(got[got.length - 1]) + '. ' : ''}${next ? 'Siguiente: ' + m.fmt(next) : '¡Todas conseguidas!'}</span>
+      ${next ? `<span class="mbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="${m.title}: ${pct}%"><i style="width:${pct}%"></i></span>` : ''}</span></div>`;
+  }).join('');
+  return `<section class="aicard stack"><h2 class="eyebrow">Medallas · ${have} de ${all}</h2>${rows}</section>`;
+}
+function newMedals(sessionId) {
+  const { won } = medalState(), out = [];
+  for (const m of MEDALS) for (const st of m.steps) if (won[m.k + st] === sessionId) out.push(m.fmt(st));
+  return out;
+}
+function strengthCard() {
+  const u = unit(), monthAgo = Date.now() - 28 * 864e5;
+  const rows = allExercises().map(e => {
+    const data = seriesFor(e.id, 'e1rm').filter(d => d.v > 0); if (!data.length) return null;
+    const now = data[data.length - 1], before = [...data].reverse().find(d => d.t <= monthAgo);
+    return { e, now: now.v, diff: before ? now.v - before.v : null, last: now.t };
+  }).filter(Boolean).sort((a, b) => b.last - a.last).slice(0, 6);
+  if (!rows.length) return '';
+  return `<section class="aicard stack" style="gap:0"><h2 class="eyebrow" style="padding-bottom:6px">Fuerza estimada</h2>
+    ${rows.map(r => `<button class="strow" data-a="p-strength" data-x="${r.e.id}"><span style="min-width:0"><b>${esc(r.e.name)}</b>${r.diff != null && Math.abs(r.diff) >= .5 ? `<br><span class="small" style="color:${r.diff > 0 ? 'var(--up)' : 'var(--down)'}">${r.diff > 0 ? '+' : ''}${num(r.diff, 1)} ${u} en 4 semanas</span>` : ''}</span><span class="num" style="font-weight:700;white-space:nowrap">${num(r.now, 1)} ${u}</span></button>`).join('')}
+    <p class="dim small" style="padding-top:8px">El peso que podrías mover una sola vez, calculado con tus series. Es una estimación: no hace falta probarlo. Toca uno para ver su gráfica.</p></section>`;
+}
+ACTS['p-strength'] = d => { S.prog.ex = d.x; S.prog.metric = 'e1rm'; render(); const c = document.getElementById('chart'); if (c) c.scrollIntoView({ block: 'center', behavior: CALM.matches ? 'auto' : 'smooth' }); };
+
 function homeView() {
   const doy = dayOfYear(), img = IMAGES[doy % IMAGES.length], q = QUOTES[doy % QUOTES.length];
   const a = active(), n = nextWorkout();
@@ -1530,7 +1620,7 @@ function homeView() {
   return `<header class="home-brand ${S.data.gym ? '' : 'no-gym'}">${logoHorizontal('only-mobile')}${gymPill()}</header><div class="home"><div class="hero"><img src="${img[0]}" alt="${esc(img[1])}" decoding="sync">
       <p class="hero-top"><span>${greeting()}, ${esc(S.data.account.name)}</span></p>
       <blockquote class="hero-quote" style="margin:0"><p class="stamp">${esc(q)}</p></blockquote></div>
-    <div class="pad stack" style="padding-block:10px 22px">${card}${streakLine()}${weekStrip()}${gymHomeCard()}</div></div>`;
+    <div class="pad stack" style="padding-block:10px 22px">${card}${streakLine()}${weekStrip()}${weekCard()}${gymHomeCard()}</div></div>`;
 }
 function startSession(dayId) {
   const d = findDay(dayId);
@@ -1763,13 +1853,14 @@ function summaryView() {
     const diff = prev != null ? toDisp(now) - toDisp(prev) : null;
     return { name: sets[0].name, sets, pr: prior.length && topNow > best, diff };
   });
-  const prs = items.filter(x => x.pr).length;
+  const prs = items.filter(x => x.pr).length, medalsNew = newMedals(s.id);
   return `<div class="pad stack narrow" style="padding-block:28px 24px;gap:16px">
     <p class="eyebrow" style="color:var(--accent)">Entrenamiento terminado</p>
     <h1 class="stamp" style="font-size:54px">${esc(s.dayName)}</h1>
     <div class="stats"><div><b>${duration(s.end - s.start)}</b><span>Duración</span></div><div><b>${s.sets.length}</b><span>Series</span></div><div><b>${num(toDisp(vol), 0)}</b><span>${unit()} movidos</span></div></div>
     ${prs ? `<p class="stamp" style="font-size:30px;color:var(--accent)">${prs} ${prs === 1 ? 'récord nuevo' : 'récords nuevos'}</p>` : ''}
     <div>${items.map(i => `<div class="hist"><b style="font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap">${esc(i.name)} ${i.pr ? '<span class="pr">RÉCORD</span>' : ''} ${i.diff ? `<span class="delta ${i.diff > 0 ? 'up' : 'down'}">${i.diff > 0 ? '+' : ''}${num(i.diff)} ${unit()}</span>` : ''}</b><span class="num muted">${i.sets.map(setText).join(' · ')}</span></div>`).join('')}</div>
+    ${medalsNew.length ? `<div class="aicard" style="display:flex;gap:12px;align-items:center"><span class="mbadge on">${MEDAL_ICON}</span><span><b>${medalsNew.length === 1 ? 'Nueva medalla' : 'Nuevas medallas'}</b><br><span class="muted">${medalsNew.map(esc).join(' · ')}</span></span></div>` : ''}
     <button class="btn line" data-a="card-workout" data-id="${s.id}">Crear tarjeta para compartir</button>
     <button class="btn go" data-a="tab" data-v="home">Volver al inicio</button>
   </div>`;
@@ -1977,6 +2068,7 @@ function progressView() {
     <p class="small muted">${METRIC[m][1]}.${data.length === 1 ? ' Registra otra sesión para ver la línea.' : ''}</p>
     <div class="stats"><div><b>${num(lastD.v)}</b><span>Último (${u})</span></div><div><b>${num(bestV)}</b><span>Mejor (${u})</span></div><div><b style="color:${change > 0 ? 'var(--up)' : change < 0 ? 'var(--down)' : 'inherit'}">${change > 0 ? '+' : ''}${num(change)}</b><span>Desde el inicio${pct ? ` (${pct > 0 ? '+' : ''}${pct} %)` : ''}</span></div></div>
     </div><div class="stack">
+    ${strengthCard()}${medalsCard()}
     <section><h2 class="eyebrow" style="padding-block:8px 2px">Registros de ${esc(ex.name)}</h2>
       ${[...data].reverse().slice(0, 8).map(d => `<div class="hist"><span class="d">${fmtDate(d.t)}</span><span class="num" style="font-weight:600">${d.sets.map(setText).join(' · ')}</span></div>`).join('')}</section>
     <section><h2 class="eyebrow" style="padding-block:14px 2px">Sesiones</h2>
