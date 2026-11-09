@@ -519,6 +519,77 @@ a.btn { text-decoration: none; }
 @keyframes prup { from { transform: translateY(16px); opacity: 0; } }
 @keyframes prring { 0% { transform: scale(.25); opacity: .85; } 100% { transform: scale(3.2); opacity: 0; } }
 .cardimg { width: 100%; max-width: 340px; margin: 0 auto; border-radius: var(--radius-m); display: block; }
+/* Suplementación */
+.spempty { align-items: flex-start; }
+.spbig { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+.spbig svg { width: 28px; height: 28px; }
+.spstrip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.spday { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0 10px; border-radius: 10px; background: var(--plate); min-height: 64px; color: var(--steel); font-size: 13px; font-weight: 600; }
+.spday b { font-size: 20px; color: var(--chalk); }
+.spday i { display: block; width: 60%; height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--accent) calc(var(--p) * 100%), var(--line) 0); margin-top: 4px; }
+.spday.on { background: var(--plate-2); box-shadow: inset 0 -2px 0 var(--accent); color: var(--chalk); }
+.spsum { display: flex; gap: 16px; align-items: center; }
+.spring { width: 86px; height: 86px; flex: none; border-radius: 50%; display: grid; place-content: center; text-align: center; background: radial-gradient(closest-side, var(--plate) 78%, transparent 80% 100%), conic-gradient(var(--accent) calc(var(--p) * 1%), var(--line) 0); }
+.spring b { font-size: 22px; line-height: 1; }
+.spring span { font-size: 12px; color: var(--steel); }
+.sprow { display: grid; grid-template-columns: 52px 40px 1fr auto; grid-template-areas: "time ic tx st" "time ic act act"; gap: 4px 10px; align-items: center; padding: 12px; border-radius: 10px; background: var(--plate); border-left: 4px solid var(--line); }
+.sprow .sptime { grid-area: time; font-size: 18px; font-weight: 700; }
+.sprow .spic { grid-area: ic; }
+.sprow .sptx { grid-area: tx; min-width: 0; }
+.sprow .sptx b { display: block; font-size: 17px; overflow-wrap: anywhere; }
+.sprow .sptx span { display: block; color: var(--steel); font-size: 14px; }
+.sprow .spst { grid-area: st; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 4px 8px; border-radius: 10px; background: var(--plate-2); color: var(--steel); white-space: nowrap; }
+.sprow .spact { grid-area: act; display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.sprow .spact .btn { width: auto; min-width: 96px; }
+.sprow.st-done { border-left-color: var(--accent); }
+.sprow.st-done .spst { background: var(--accent); color: var(--on-accent); }
+.sprow.st-done .sptx b { color: var(--steel); }
+.sprow.st-late { border-left-color: var(--chalk); }
+.sprow.st-late .spst { background: var(--chalk); color: var(--ground); }
+.sprow.st-snooze { border-left-color: var(--amber); }
+.sprow.st-snooze .spst { background: transparent; color: var(--amber); box-shadow: inset 0 0 0 1.5px var(--amber); }
+.sprow.st-missed { border-left-color: var(--down); }
+.sprow.st-missed .spst { background: transparent; color: var(--down); box-shadow: inset 0 0 0 1.5px var(--down); }
+.spic { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--plate-2); color: var(--accent); flex: none; }
+.spic svg { width: 22px; height: 22px; }
+.spcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 8px; }
+.spcard { display: flex; gap: 12px; align-items: center; padding: 14px; border-radius: 10px; background: var(--plate); text-align: left; width: 100%; }
+.spcard .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.spcard .tx b { font-size: 18px; overflow-wrap: anywhere; }
+.spcard > svg { width: 22px; height: 22px; color: var(--steel-dim); flex: none; }
+.spcard.off { opacity: .62; }
+.spcard.off .spic { color: var(--steel); }
+.sptimes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.sptimes i { font-style: normal; font-size: 13px; font-weight: 700; padding: 3px 8px; border-radius: 8px; background: var(--plate-2); }
+.sptimes .tagoff { color: var(--amber); }
+.sphist { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 8px 12px; border-radius: 8px; background: var(--plate); text-align: left; }
+.sphist > span:first-child { flex: 1; min-width: 0; font-size: 15px; }
+.dots { display: flex; flex-wrap: wrap; gap: 4px; max-width: 50%; justify-content: flex-end; }
+.dots.wide { max-width: none; justify-content: flex-start; }
+.dots i, .splegend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+.dots i.st-done, .splegend i.st-done { background: var(--accent); }
+.dots i.st-snooze, .splegend i.st-snooze { background: var(--amber); }
+.dots i.st-missed, .splegend i.st-missed { background: var(--down); }
+.dots i.st-late, .dots i.st-pending, .splegend i.st-pending { background: transparent; box-shadow: inset 0 0 0 1.5px var(--steel); }
+.splegend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.splegend i { margin-left: 6px; }
+.spwd { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.spwd button { min-height: 46px; border-radius: 8px; background: var(--plate-2); font-weight: 700; color: var(--steel); }
+.spwd button.on { background: var(--accent); color: var(--on-accent); }
+.dose { display: grid; grid-template-columns: 70px 1fr auto; gap: 10px; align-items: center; }
+.dose label { font-size: 14px; font-weight: 600; color: var(--steel); }
+input[type=time] { width: 100%; min-height: 54px; padding: 12px 14px; font-size: 17px; background: var(--plate-2); border: 1px solid var(--line); border-radius: 8px; color: var(--chalk); font-family: inherit; }
+.flabel { font-size: 14px; font-weight: 600; color: var(--steel); }
+#suppnote { position: fixed; left: 0; right: 0; bottom: calc(var(--nav-h, 76px) + env(safe-area-inset-bottom, 0px) + 10px); z-index: 45; display: flex; justify-content: center; padding: 0 max(12px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px)); pointer-events: none; }
+.spnote { pointer-events: auto; width: min(100%, 480px); display: grid; grid-template-columns: 40px 1fr auto; gap: 10px 12px; align-items: center; padding: 14px; border-radius: 14px; background: var(--plate-2); box-shadow: 0 12px 40px rgba(0,0,0,.55), inset 0 0 0 1px var(--line); animation: noteup .32s cubic-bezier(.2,.8,.2,1); }
+.spnote .tx { min-width: 0; }
+.spnote .tx b { display: block; font-size: 17px; }
+.spnote .tx span { display: block; color: var(--steel); font-size: 14px; }
+.spnote .row2 { grid-column: 1 / -1; }
+@keyframes noteup { from { transform: translateY(20px); opacity: 0; } }
+.calm .spnote { animation: none; }
+@media (min-width: 900px) { #suppnote { bottom: 24px; } }
+
 .exphoto { position: relative; margin: 0; aspect-ratio: 3 / 2; border-radius: var(--radius-m); overflow: hidden; background: var(--plate-2); }
 .exphoto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .exphoto .p2 { animation: expose 3s ease-in-out infinite; }
@@ -689,6 +760,7 @@ const ICON = {
   apple: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8c-2-1.8-7.5-1.4-7.5 4.5 0 4 2.6 8 5 8 1 0 1.6-.6 2.5-.6s1.5.6 2.5.6c2.4 0 5-4 5-8C19.5 6.6 14 6.2 12 8z"/><path d="M12 8c0-2 .8-4 3-5"/></svg>',
   pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5s7-6.2 7-11.5a7 7 0 1 0-14 0c0 5.3 7 11.5 7 11.5z"/><circle cx="12" cy="10" r="2.4"/></svg>',
   bookmark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M6.5 3.5h11v17l-5.5-3.8-5.5 3.8z"/></svg>',
+  pill: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="8.6" width="17.6" height="6.8" rx="3.4" transform="rotate(-40 12 12)"/><path d="m9.4 8.9 5.2 6.2"/></svg>',
   info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.2"/></svg>',
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
   next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
@@ -754,7 +826,7 @@ const S = {
   sync: { base: {}, ids: [], idx: {}, pushed: '' }
 };
 const ACCOUNT_KEY = 'hierro:account';
-const SECTIONS = ['account', 'settings', 'setupDone', 'days', 'activeId', 'body', 'aiProfile', 'aiRoutines', 'aiDraft', 'gym', 'nutrition'];
+const SECTIONS = ['account', 'settings', 'setupDone', 'days', 'activeId', 'body', 'aiProfile', 'aiRoutines', 'aiDraft', 'gym', 'nutrition', 'supps', 'suppLog'];
 const cloud = {
   enabled: !window.claude && (location.protocol === 'https:' || location.hostname === 'localhost'),
   ready: false, failed: false, user: null, status: 'off', lastSync: 0, running: false, again: false, timer: null, loginBusy: false, loginErr: ''
@@ -1047,7 +1119,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.28';
+const APP_VERSION = '2.29';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -1055,7 +1127,7 @@ const CALM = { get matches() {
 } };
 function applyMotion() { document.documentElement.classList.toggle('calm', CALM.matches); }
 const EASE = 'cubic-bezier(.22,.8,.24,1)';
-const TAB_ORDER = ['home', 'routine', 'routines', 'progress', 'more', 'nutrition', 'gym', 'body', 'settings'];
+const TAB_ORDER = ['home', 'routine', 'routines', 'progress', 'more', 'supps', 'nutrition', 'gym', 'body', 'settings'];
 let prevKey = null, prevPlace = null;
 function place() {
   const v = S.view, st = S.setup;
@@ -1166,9 +1238,9 @@ function moveInd() {
 function renderChrome() {
   const b = $('#banner');
   b.innerHTML = S.demo ? '<div class="banner"><span>Datos de ejemplo. No se guardan.</span><button data-a="exit-demo">Salir</button></div>' : '';
-  const tabs = { home: 'Inicio', routine: 'Plan', routines: 'Rutinas', progress: 'Progreso', more: 'Más', nutrition: 'Nutrición', gym: 'Gimnasio', body: 'Cuerpo', settings: 'Ajustes' };
-  const ic = { home: ICON.home, routine: ICON.cal, routines: ICON.list, progress: ICON.chart, more: ICON.more, nutrition: ICON.apple, gym: ICON.pin, body: ICON.scale, settings: ICON.gear };
-  const inMore = ['nutrition', 'gym', 'body', 'settings'];
+  const tabs = { home: 'Inicio', routine: 'Plan', routines: 'Rutinas', progress: 'Progreso', more: 'Más', supps: 'Suplementos', nutrition: 'Nutrición', gym: 'Gimnasio', body: 'Cuerpo', settings: 'Ajustes' };
+  const ic = { home: ICON.home, routine: ICON.cal, routines: ICON.list, progress: ICON.chart, more: ICON.more, supps: ICON.pill, nutrition: ICON.apple, gym: ICON.pin, body: ICON.scale, settings: ICON.gear };
+  const inMore = ['supps', 'nutrition', 'gym', 'body', 'settings'];
   const cur = S.view === 'day' ? 'routine' : ['aiq', 'aigen', 'airesult'].includes(S.view) ? 'routines' : S.view === 'aichat' ? 'nutrition' : S.view;
   const box = $('#nav'), showNav = S.data && S.view !== 'setup';
   if (!showNav) box.innerHTML = '';
@@ -1698,7 +1770,7 @@ function homeView() {
   return `<header class="home-brand ${S.data.gym ? '' : 'no-gym'}">${logoHorizontal('only-mobile')}${gymPill()}</header><div class="home"><div class="hero"><img src="${img[0]}" alt="${esc(img[1])}" decoding="sync">
       <p class="hero-top"><span>${greeting()}, ${esc(S.data.account.name)}</span></p>
       <blockquote class="hero-quote" style="margin:0"><p class="stamp">${esc(q)}</p></blockquote></div>
-    <div class="pad stack" style="padding-block:10px 22px">${card}${streakLine()}${weekStrip()}${weekCard()}${gymHomeCard()}</div></div>`;
+    <div class="pad stack" style="padding-block:10px 22px">${card}${streakLine()}${weekStrip()}${weekCard()}${suppHomeCard()}${gymHomeCard()}</div></div>`;
 }
 function startSession(dayId) {
   const d = findDay(dayId);
@@ -1866,7 +1938,7 @@ function renderSheet() {
     setTimeout(() => o.remove(), 190);
     return;
   }
-  const map = { timer: timerSheet, confirm: confirmSheet, group: groupSheet, ex: exSheet, exedit: exEditSheet, pickday: pickDaySheet, name: nameSheet, exinfo: exInfoSheet, card: cardSheet, aiconsent: aiConsentSheet, rtregen: rtRegenSheet, rtex: rtExSheet, rtday: rtDaySheet, toplan: toPlanSheet, gymloc: gymLocSheet, gymedit: gymEditSheet, wd: wdSheet, goal: goalSheet, height: heightSheet, bodyask: bodyAskSheet };
+  const map = { timer: timerSheet, confirm: confirmSheet, group: groupSheet, ex: exSheet, exedit: exEditSheet, pickday: pickDaySheet, name: nameSheet, supp: suppSheet, exinfo: exInfoSheet, card: cardSheet, aiconsent: aiConsentSheet, rtregen: rtRegenSheet, rtex: rtExSheet, rtday: rtDaySheet, toplan: toPlanSheet, gymloc: gymLocSheet, gymedit: gymEditSheet, wd: wdSheet, goal: goalSheet, height: heightSheet, bodyask: bodyAskSheet };
   const keep = el.querySelector('.overlay:not(.closing) .sheet'), same = keep && el.dataset.t === s.type;
   el.dataset.t = s.type;
   const html = `<div class="overlay" data-backdrop="1">${map[s.type]()}</div>`;
@@ -2498,6 +2570,315 @@ ACTS['rt-info'] = d => openExInfo('routine', d.d, d.x);
 ACTS['log-info'] = d => openExInfo('plan', null, d.e);
 ACTS['ex-explain'] = () => explainExercise();
 
+/* ========== Suplementación ==========
+   Supplements live in the account data (section "supps"), intakes in "suppLog" keyed by local date.
+   Reminders: inside the app while it is open, and as push notifications from the notice server,
+   which keeps one plan per account under a random key and sends to every device that switched them on. */
+const SUPP_UNITS = [['g', 'g', 'g'], ['mg', 'mg', 'mg'], ['ml', 'ml', 'ml'], ['cap', 'cápsula', 'cápsulas'], ['pas', 'pastilla', 'pastillas'], ['com', 'comprimido', 'comprimidos'], ['sob', 'sobre', 'sobres'], ['uni', 'unidad', 'unidades']];
+const SUPP_PRESETS = [['Creatina', 'g', 'scoop'], ['Proteína whey', 'g', 'scoop'], ['Proteína caseína', 'g', 'scoop'], ['L-Carnitina', 'ml', 'drop'], ['Omega 3', 'cap', 'cap'], ['Magnesio', 'com', 'tab'], ['Vitamina D', 'cap', 'drop'], ['Multivitamínico', 'com', 'tab'], ['Cafeína', 'mg', 'bolt'], ['Colágeno', 'g', 'scoop']];
+const SUPP_ICONS = {
+  scoop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h11v1.5a5.5 5.5 0 0 1-11 0z"/><path d="M15 11h5"/><path d="M7.5 7.2c.8-1.3 2.7-1.3 3.5 0"/></svg>',
+  cap: ICON.pill,
+  drop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c3.2 4 5.5 7 5.5 10a5.5 5.5 0 0 1-11 0c0-3 2.3-6 5.5-10z"/></svg>',
+  tab: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M8.5 12h7"/></svg>',
+  bolt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg>'
+};
+const suppIcon = it => SUPP_ICONS[it.icon] || SUPP_ICONS.cap;
+const SNOOZE_MIN = 15;
+const suppDateKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const suppKeyDate = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+const suppWd = d => (d.getDay() + 6) % 7;
+const rndKey = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
+function suppData() {
+  const d = S.data;
+  if (!d.supps) d.supps = { key: '', remind: false, rev: 0, items: [] };
+  if (!d.supps.key) d.supps.key = rndKey();
+  if (!d.suppLog) d.suppLog = {};
+  return d.supps;
+}
+const suppItems = () => (S.data && S.data.supps && S.data.supps.items) || [];
+function suppAmount(it) {
+  const u = SUPP_UNITS.find(x => x[0] === it.unit) || SUPP_UNITS[0];
+  return num(it.amount, 2) + ' ' + (Number(it.amount) === 1 ? u[1] : u[2]);
+}
+const suppTitle = it => '💊 Es hora de tu ' + it.name;
+const suppBody = it => 'Te toca tomar ' + suppAmount(it);
+/* the doses of one local day */
+function suppDay(date) {
+  const dk = suppDateKey(date), wd = suppWd(date), log = (S.data.suppLog || {})[dk] || {}, now = Date.now(), today = suppDateKey(new Date());
+  const out = [];
+  for (const it of suppItems()) {
+    if (!it.active || !it.days.includes(wd)) continue;
+    for (const dose of it.doses) {
+      const [h, m] = dose.t.split(':').map(Number), at = new Date(date.getFullYear(), date.getMonth(), date.getDate(), h, m).getTime();
+      const k = it.id + '|' + dose.id, rec = log[k];
+      let st = 'pending';
+      if (rec && rec.s === 'done') st = 'done';
+      else if (rec && rec.s === 'snooze' && rec.until > now) st = 'snooze';
+      else if (dk < today) st = 'missed';
+      else if (at <= now) st = 'late';
+      out.push({ dk, k, key: dk + '|' + k, it, dose, at, st, rec });
+    }
+  }
+  return out.sort((a, b) => a.at - b.at || a.it.name.localeCompare(b.it.name));
+}
+const SUPP_ST = { done: 'Completada', pending: 'Pendiente', late: 'Pendiente', snooze: 'Pospuesta', missed: 'No realizada' };
+function suppSetLog(dk, k, rec) {
+  const L = S.data.suppLog || (S.data.suppLog = {});
+  if (!L[dk]) L[dk] = {};
+  if (rec) L[dk][k] = rec; else delete L[dk][k];
+  if (!Object.keys(L[dk]).length) delete L[dk];
+  const keys = Object.keys(L).sort(); while (keys.length > 120) delete L[keys.shift()];
+  touch(); suppSync(true); renderSuppNote();
+}
+function suppNext() {
+  const now = Date.now();
+  for (let i = 0; i < 8; i++) {
+    const d = new Date(); d.setDate(d.getDate() + i);
+    const o = suppDay(d).find(x => (x.st === 'pending' || x.st === 'snooze') && (x.st === 'snooze' ? x.rec.until : x.at) > now);
+    if (o) return o;
+  }
+  return null;
+}
+const hhmm = t => new Date(t).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+function suppWhen(o) {
+  const t = o.st === 'snooze' ? o.rec.until : o.at, d = new Date(t), today = new Date(), tm = new Date(); tm.setDate(tm.getDate() + 1);
+  const day = suppDateKey(d) === suppDateKey(today) ? '' : suppDateKey(d) === suppDateKey(tm) ? 'mañana ' : dateLong.format(d) + ' ';
+  return day + 'a las ' + hhmm(t);
+}
+function suppMoreLine() {
+  const items = suppItems().filter(x => x.active);
+  if (!items.length) return 'Tus suplementos, dosis y recordatorios';
+  const n = suppNext();
+  return items.length + (items.length === 1 ? ' suplemento activo' : ' suplementos activos') + (n ? ' · Próxima: ' + esc(n.it.name) + ' ' + suppWhen(n) : '');
+}
+function suppHomeCard() {
+  if (!suppItems().some(x => x.active)) return '';
+  const day = suppDay(new Date()), done = day.filter(x => x.st === 'done').length, n = suppNext();
+  if (!day.length && !n) return '';
+  return `<button class="drow" data-a="tab" data-v="supps" aria-label="Suplementos de hoy: ${done} de ${day.length} tomas"><span class="moreic">${ICON.pill}</span><span class="tx"><b>Suplementos de hoy · ${done}/${day.length}</b><span>${n ? 'Próxima: ' + esc(n.it.name) + ' (' + esc(suppAmount(n.it)) + ') ' + suppWhen(n) : 'No te queda ninguna toma hoy'}</span></span>${ICON.next}</button>`;
+}
+
+/* ---------- view ---------- */
+function suppRemindCard() {
+  const sp = S.data.supps || {}, on = !!sp.remind;
+  const wrap = inner => `<section class="aicard stack"><h2 class="eyebrow">Recordatorios</h2>${inner}</section>`;
+  if (!pushAvailable()) return wrap('<p class="muted small">Mientras tengas la app abierta te avisamos a la hora de cada toma. Los avisos en el móvil con la app cerrada funcionan en la versión instalada de FORJURA.</p>');
+  let note = '';
+  if (isIOS && !isStandalone()) note = 'Para recibirlos con la app cerrada, añade FORJURA a la pantalla de inicio (Compartir → Añadir a pantalla de inicio) y ábrela desde ahí.';
+  else if (!pushCapable()) note = 'Este navegador no permite notificaciones con la app cerrada. Mientras tengas la app abierta, te avisamos dentro de ella.';
+  else if (Notification.permission === 'denied') note = 'Has bloqueado las notificaciones. Actívalas en los ajustes del móvil, en Notificaciones → FORJURA.';
+  const here = !!pushSub();
+  const sub = S.suppBusy ? 'Activando…' : !on ? 'Te avisamos a la hora de cada toma, aunque tengas la app cerrada.' : here ? 'Activados en este dispositivo. Cambia los horarios cuando quieras: los avisos se actualizan solos.' : 'Activados en tu cuenta, pero no en este dispositivo. Vuelve a pulsar para recibirlos también aquí.';
+  return wrap(`${note ? `<p class="muted small">${note}</p>` : ''}
+    <button class="setline" data-a="sp-remind" role="switch" aria-checked="${on && (here || !!note)}" ${S.suppBusy || (note && !on) ? 'disabled' : ''}><span>Avisos en el móvil<br><span class="muted small">${sub}</span></span><span class="switch ${on && (here || note) ? 'on' : ''}"><i></i></span></button>
+    ${on && here ? '<button class="setline" data-a="sp-test"><span>Probar un aviso<br><span class="muted small">Pulsa y bloquea el móvil: te llegará en 10 segundos</span></span>' + ICON.next + '</button>' : ''}`);
+}
+function suppRow(o, today) {
+  const canAct = o.dk <= today;
+  return `<div class="sprow st-${o.st}" data-k="${o.key}">
+    <span class="sptime num">${o.dose.t}</span>
+    <span class="spic">${suppIcon(o.it)}</span>
+    <span class="sptx"><b>${esc(o.it.name)}</b><span>${esc(suppAmount(o.it))}${o.st === 'done' && o.rec.at ? ' · tomada a las ' + hhmm(o.rec.at) : o.st === 'snooze' ? ' · te avisamos a las ' + hhmm(o.rec.until) : o.st === 'late' ? ' · ya es la hora' : ''}</span></span>
+    <span class="spst">${SUPP_ST[o.st]}</span>
+    <span class="spact">${o.st === 'done' ? `<button class="btn line slim" data-a="sp-done" data-key="${o.key}" aria-label="Desmarcar ${esc(o.it.name)} de las ${o.dose.t}">Deshacer</button>`
+      : canAct ? `<button class="btn go slim" data-a="sp-done" data-key="${o.key}" aria-label="Marcar ${esc(o.it.name)} de las ${o.dose.t} como tomada">Hecho</button>${o.dk === today && o.st !== 'missed' ? `<button class="btn line slim" data-a="sp-snooze" data-key="${o.key}" aria-label="Posponer ${SNOOZE_MIN} minutos">+${SNOOZE_MIN} min</button>` : ''}` : ''}</span></div>`;
+}
+function suppsView() {
+  const items = suppItems(), today = suppDateKey(new Date());
+  const head = `<h1 class="page-title stamp pad" style="font-size:clamp(30px, 9.4vw, 56px)">Suplementación</h1>`;
+  const legal = '<p class="dim small">FORJURA no recomienda dosis: sigue la etiqueta del producto o lo que te indique tu médico o farmacéutico.</p>';
+  if (!items.length) return head + `<div class="pad stack" style="padding-bottom:24px"><section class="aicard stack spempty"><span class="spbig">${ICON.pill}</span><h2 class="stamp" style="font-size:24px">Tus suplementos, a su hora</h2><p class="muted">Apunta lo que tomas, cuánto y a qué horas. Te avisamos de cada toma y llevas la cuenta de lo que has tomado. Es opcional: si no tomas nada, no cambia nada del resto de la app.</p><button class="btn go" data-a="sp-add">+ Añadir suplemento</button></section>${legal}</div>`;
+  const sel = S.p.day && S.p.day <= today ? S.p.day : today, selDate = suppKeyDate(sel);
+  const strip = Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - 6 + i); return d; }).map(d => {
+    const k = suppDateKey(d), list = suppDay(d), dn = list.filter(x => x.st === 'done').length;
+    return `<button class="spday ${k === sel ? 'on' : ''}" data-a="sp-day" data-d="${k}" aria-pressed="${k === sel}" aria-label="${dateLong.format(d)}: ${dn} de ${list.length} tomas"><span>${k === today ? 'Hoy' : WS[suppWd(d)]}</span><b class="num">${d.getDate()}</b><i style="--p:${list.length ? dn / list.length : 0}"></i></button>`;
+  }).join('');
+  const list = suppDay(selDate), done = list.filter(x => x.st === 'done').length, pct = list.length ? Math.round(done / list.length * 100) : 0, n = suppNext();
+  const active = items.filter(x => x.active).length;
+  const summary = `<section class="aicard spsum"><div class="spring" style="--p:${pct}" role="img" aria-label="${done} de ${list.length} tomas completadas"><b class="num">${done}/${list.length}</b><span>tomas</span></div>
+    <div class="stack" style="gap:6px;min-width:0"><b>${sel === today ? 'Hoy' : esc(dateLong.format(selDate))}</b>
+    ${sel === today ? (n ? `<span class="muted">Próxima: <b style="color:var(--chalk)">${esc(n.it.name)}</b>, ${esc(suppAmount(n.it))} ${suppWhen(n)}</span>` : '<span class="muted">No te quedan tomas pendientes.</span>') : `<span class="muted">${list.length - done ? (list.length - done) + ' sin marcar' : 'Todas completadas'}</span>`}
+    <span class="dim small">${active} ${active === 1 ? 'suplemento activo' : 'suplementos activos'}</span></div></section>`;
+  const rows = list.length ? `<div class="stack" style="gap:8px">${list.map(o => suppRow(o, today)).join('')}</div>` : '<p class="muted">No hay tomas programadas este día.</p>';
+  const cards = items.map(it => {
+    const allDays = it.days.length === 7, dtext = allDays ? 'Todos los días' : WS.filter((_, i) => it.days.includes(i)).join(' ');
+    return `<button class="spcard ${it.active ? '' : 'off'}" data-a="sp-edit" data-id="${it.id}" data-k="c-${it.id}"><span class="spic">${suppIcon(it)}</span><span class="tx"><b>${esc(it.name)}</b>${it.brand ? `<span class="dim small">${esc(it.brand)}</span>` : ''}
+      <span class="muted small">${esc(suppAmount(it))} · ${it.doses.length} ${it.doses.length === 1 ? 'toma' : 'tomas'} al día · ${dtext}</span>
+      <span class="sptimes">${it.doses.map(d => `<i class="num">${d.t}</i>`).join('')}${!it.active ? '<i class="tagoff">En pausa</i>' : it.remind === false ? '<i class="tagoff">Sin aviso</i>' : ''}</span></span>${ICON.next}</button>`;
+  }).join('');
+  const hist = Array.from({ length: 14 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - 1 - i); return d; }).map(d => {
+    const l = suppDay(d); if (!l.length) return '';
+    const dn = l.filter(x => x.st === 'done').length;
+    return `<button class="sphist" data-a="sp-dayback" data-d="${suppDateKey(d)}"><span>${esc(dateLong.format(d))}</span><span class="dots">${l.map(x => `<i class="st-${x.st}" title="${esc(x.it.name)} ${x.dose.t}: ${SUPP_ST[x.st]}"></i>`).join('')}</span><b class="num">${dn}/${l.length}</b></button>`;
+  }).join('');
+  return head + `<div class="pad stack" style="padding-bottom:24px">
+    <div class="spstrip" role="group" aria-label="Elige un día">${strip}</div>
+    ${summary}
+    <section class="stack" style="gap:10px"><h2 class="eyebrow">${sel === today ? 'Tomas de hoy' : 'Tomas del ' + esc(dateLong.format(selDate))}</h2>${rows}
+      <p class="dim small splegend"><i class="st-done"></i>Completada <i class="st-pending"></i>Pendiente <i class="st-snooze"></i>Pospuesta <i class="st-missed"></i>No realizada</p></section>
+    ${suppRemindCard()}
+    <section class="stack" style="gap:10px"><div style="display:flex;align-items:center;gap:10px"><h2 class="eyebrow" style="flex:1">Tus suplementos</h2><button class="btn line slim" data-a="sp-add">+ Añadir suplemento</button></div><div class="spcards">${cards}</div></section>
+    ${hist ? `<section class="stack" style="gap:6px"><h2 class="eyebrow">Historial</h2>${hist}</section>` : ''}
+    ${legal}</div>`;
+}
+
+/* ---------- edit sheet ---------- */
+function suppDraft(it) {
+  return it ? JSON.parse(JSON.stringify(it)) : { id: null, name: '', brand: '', amount: '', unit: 'g', icon: 'cap', doses: [{ id: uid(), t: '09:00' }], days: [0, 1, 2, 3, 4, 5, 6], notes: '', active: true, remind: true };
+}
+function suppSheet() {
+  const sh = S.sheet, v = sh.v, isNew = !v.id;
+  const hist = !isNew ? (() => {
+    let dn = 0, tot = 0; const dots = [];
+    for (let i = 29; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); for (const o of suppDay(d).filter(x => x.it.id === v.id)) { tot++; if (o.st === 'done') dn++; dots.push(`<i class="st-${o.st}" title="${esc(dateLong.format(d))} ${o.dose.t}: ${SUPP_ST[o.st]}"></i>`); } }
+    return tot ? `<div class="stack" style="gap:6px"><h3 class="eyebrow">Últimos 30 días</h3><p class="muted small">Has completado ${dn} de ${tot} tomas.</p><span class="dots wide">${dots.join('')}</span></div>` : '';
+  })() : '';
+  return `<form class="sheet" id="supp-form" novalidate><div class="shead"><h2 class="stamp">${isNew ? 'Añadir suplemento' : 'Editar suplemento'}</h2><button type="button" class="iconbtn" data-a="close-sheet" aria-label="Cerrar">${ICON.x}</button></div>
+    ${isNew ? `<div class="stack" style="gap:6px"><span class="small muted">Sugerencias</span><div class="chips">${SUPP_PRESETS.map((p, i) => `<button type="button" class="chip ${v.name === p[0] ? 'on' : ''}" data-a="sp-preset" data-i="${i}">${p[0]}</button>`).join('')}</div></div>` : ''}
+    <div class="field"><label for="sp-name">Nombre</label><input id="sp-name" type="text" data-sp="name" value="${esc(v.name)}" maxlength="40" placeholder="Por ejemplo, Creatina" required></div>
+    <div class="field"><label for="sp-brand">Marca <span class="dim">(opcional)</span></label><input id="sp-brand" type="text" data-sp="brand" value="${esc(v.brand)}" maxlength="40"></div>
+    <div class="row2"><div class="field"><label for="sp-amount">Cantidad por toma</label><input id="sp-amount" type="text" inputmode="decimal" data-sp="amount" value="${esc(String(v.amount))}" placeholder="0"></div>
+      <div class="field"><label for="sp-unit">Unidad</label><select id="sp-unit" data-sp="unit">${SUPP_UNITS.map(u => `<option value="${u[0]}" ${u[0] === v.unit ? 'selected' : ''}>${u[2]}</option>`).join('')}</select></div></div>
+    <div class="stack" style="gap:8px"><span class="flabel">Tomas al día: ${v.doses.length}</span>
+      ${v.doses.map((d, i) => `<div class="dose"><label for="sp-t${i}">Toma ${i + 1}</label><input id="sp-t${i}" type="time" data-sp="t" data-n="${i}" value="${d.t}" required>${v.doses.length > 1 ? `<button type="button" class="iconbtn" data-a="sp-dose-del" data-n="${i}" aria-label="Quitar la toma ${i + 1}">${ICON.x}</button>` : ''}</div>`).join('')}
+      <button type="button" class="btn line slim" data-a="sp-dose-add">+ Añadir otra toma</button></div>
+    <div class="stack" style="gap:8px"><span class="flabel">Días</span><div class="spwd" role="group" aria-label="Días de la semana">${WS.map((w, i) => `<button type="button" class="${v.days.includes(i) ? 'on' : ''}" data-a="sp-wd" data-i="${i}" aria-pressed="${v.days.includes(i)}" aria-label="${WD[i]}">${w}</button>`).join('')}</div></div>
+    <div class="field"><label for="sp-notes">Notas <span class="dim">(opcional)</span></label><textarea id="sp-notes" data-sp="notes" maxlength="300" placeholder="Por ejemplo, con el desayuno">${esc(v.notes)}</textarea></div>
+    <button type="button" class="setline" data-a="sp-sw" data-f="remind" role="switch" aria-checked="${v.remind !== false}"><span>Recordatorio<br><span class="muted small">Avisarte a la hora de cada toma</span></span><span class="switch ${v.remind !== false ? 'on' : ''}"><i></i></span></button>
+    <button type="button" class="setline" data-a="sp-sw" data-f="active" role="switch" aria-checked="${v.active}"><span>Activo<br><span class="muted small">Desactívalo para pausarlo sin borrarlo</span></span><span class="switch ${v.active ? 'on' : ''}"><i></i></span></button>
+    ${sh.err ? `<div class="warn" role="alert"><p>${esc(sh.err)}</p></div>` : ''}
+    <button class="btn go" type="submit">Guardar</button>
+    ${hist}
+    ${isNew ? '' : sh.askDel ? `<div class="aicard stack"><p>¿Eliminar ${esc(v.name)}? Se borra también su historial de tomas.</p><div class="row2"><button type="button" class="btn line slim" data-a="sp-del-no">Cancelar</button><button type="button" class="btn danger slim" data-a="sp-del-yes">Eliminar</button></div></div>` : '<button type="button" class="btn danger slim" data-a="sp-del">Eliminar suplemento</button>'}</form>`;
+}
+document.getElementById('app').addEventListener('input', ev => {
+  const el = ev.target, f = el.dataset && el.dataset.sp;
+  if (!f || !S.sheet || S.sheet.type !== 'supp') return;
+  const v = S.sheet.v;
+  if (f === 't') v.doses[+el.dataset.n].t = el.value || v.doses[+el.dataset.n].t; else v[f] = el.value;
+});
+document.getElementById('app').addEventListener('change', ev => { const el = ev.target; if (el.dataset && el.dataset.sp === 'unit' && S.sheet && S.sheet.type === 'supp') S.sheet.v.unit = el.value; });
+const openSupp = it => { suppData(); S.sheet = { type: 'supp', v: suppDraft(it), err: '', askDel: false }; renderSheet(); };
+ACTS['sp-add'] = () => openSupp(null);
+ACTS['sp-edit'] = d => { const it = suppItems().find(x => x.id === d.id); if (it) openSupp(it); };
+ACTS['sp-preset'] = d => { const p = SUPP_PRESETS[+d.i], v = S.sheet.v; v.name = p[0]; v.unit = p[1]; v.icon = p[2]; renderSheet(); };
+ACTS['sp-wd'] = d => { const v = S.sheet.v, i = +d.i; v.days = v.days.includes(i) ? v.days.filter(x => x !== i) : [...v.days, i].sort(); renderSheet(); };
+ACTS['sp-dose-add'] = () => { const v = S.sheet.v, last = v.doses[v.doses.length - 1]; const [h, m] = (last ? last.t : '08:00').split(':').map(Number); v.doses.push({ id: uid(), t: String(Math.min(23, h + 4)).padStart(2, '0') + ':' + String(m).padStart(2, '0') }); renderSheet(); };
+ACTS['sp-dose-del'] = d => { const v = S.sheet.v; if (v.doses.length > 1) v.doses.splice(+d.n, 1); renderSheet(); };
+ACTS['sp-sw'] = d => { const v = S.sheet.v; v[d.f] = d.f === 'remind' ? v.remind === false : !v[d.f]; renderSheet(); };
+ACTS['sp-del'] = () => { S.sheet.askDel = true; renderSheet(); };
+ACTS['sp-del-no'] = () => { S.sheet.askDel = false; renderSheet(); };
+ACTS['sp-del-yes'] = () => {
+  const id = S.sheet.v.id, sp = suppData();
+  sp.items = sp.items.filter(x => x.id !== id); sp.rev = Date.now();
+  for (const dk in S.data.suppLog) { for (const k in S.data.suppLog[dk]) if (k.startsWith(id + '|')) delete S.data.suppLog[dk][k]; if (!Object.keys(S.data.suppLog[dk]).length) delete S.data.suppLog[dk]; }
+  touch(); suppSync(true); S.sheet = null; renderSheet(); render(); toast('Suplemento eliminado');
+};
+function saveSupp() {
+  const sh = S.sheet, v = sh.v;
+  const amount = parseNum(String(v.amount).replace(',', '.'));
+  const err = !v.name.trim() ? 'Escribe el nombre del suplemento.' : !(amount > 0) ? 'Indica la cantidad por toma.' : !v.days.length ? 'Elige al menos un día.' : v.doses.some(d => !/^\d\d:\d\d$/.test(d.t)) ? 'Revisa las horas de las tomas.' : new Set(v.doses.map(d => d.t)).size < v.doses.length ? 'Hay dos tomas a la misma hora.' : '';
+  if (err) { sh.err = err; renderSheet(); return; }
+  const sp = suppData(), it = { ...v, name: v.name.trim().slice(0, 40), brand: String(v.brand || '').trim().slice(0, 40), amount, notes: String(v.notes || '').trim().slice(0, 300), doses: [...v.doses].sort((a, b) => a.t.localeCompare(b.t)) };
+  if (!it.id) { it.id = uid(); it.created = Date.now(); sp.items.push(it); } else sp.items = sp.items.map(x => x.id === it.id ? it : x);
+  sp.rev = Date.now(); touch(); suppSync(true);
+  S.sheet = null; renderSheet(); render(); renderSuppNote(); toast(v.id ? 'Cambios guardados' : 'Suplemento añadido', 'ok');
+}
+document.getElementById('app').addEventListener('submit', ev => { if (ev.target.id === 'supp-form') { ev.preventDefault(); saveSupp(); } });
+ACTS['sp-day'] = d => { S.p.day = d.d; render(); };
+ACTS['sp-dayback'] = d => { S.p.day = d.d; render(); window.scrollTo({ top: 0, behavior: CALM.matches ? 'auto' : 'smooth' }); };
+function suppFind(key) { const [dk, sid, did] = key.split('|'); const it = suppItems().find(x => x.id === sid); return { dk, k: sid + '|' + did, it }; }
+ACTS['sp-done'] = d => {
+  const { dk, k } = suppFind(d.key), rec = ((S.data.suppLog || {})[dk] || {})[k];
+  if (rec && rec.s === 'done') suppSetLog(dk, k, null); else { suppSetLog(dk, k, { s: 'done', at: Date.now() }); suppSeen.delete(d.key); }
+  if (S.view === 'supps') render();
+};
+ACTS['sp-snooze'] = d => {
+  const { dk, k } = suppFind(d.key);
+  suppSetLog(dk, k, { s: 'snooze', at: Date.now(), until: Date.now() + SNOOZE_MIN * 60000 });
+  toast('Te lo recordamos en ' + SNOOZE_MIN + ' minutos'); if (S.view === 'supps') render();
+};
+ACTS['sp-remind'] = async () => {
+  const sp = suppData();
+  if (sp.remind && pushSub()) { sp.remind = false; touch(); suppSync(true); render(); return; }
+  if (!pushSub()) {
+    S.suppBusy = true; render();
+    await pushEnable();
+    S.suppBusy = false;
+    if (!pushSub()) { render(); return; }
+  }
+  sp.remind = true; touch(); suppSync(true); render(); toast('Avisos de suplementos activados', 'ok');
+};
+ACTS['sp-test'] = () => { pushSend('/schedule', { at: Date.now() + 10000, title: '💊 Prueba de FORJURA', body: 'Así te avisaremos de cada toma' }); toast('Bloquea el móvil: el aviso llega en 10 segundos', 'ok'); };
+
+/* ---------- reminders: server plan ---------- */
+const suppSeen = new Set(); // reminders already shown inside the app in this session
+const suppInApp = new Set(); // doses the app will show itself, so the server skips the notification
+let suppT = 0;
+function suppSync(soon) { clearTimeout(suppT); suppT = setTimeout(suppSyncNow, soon ? 300 : 1500); }
+function suppSyncNow() {
+  if (S.demo || !S.data || !S.data.supps || !S.data.supps.key || !pushAvailable()) return;
+  const sp = S.data.supps, sub = pushSub();
+  if (!sp.remind && !sub) return;
+  const items = sp.remind ? sp.items.filter(it => it.active && it.remind !== false).flatMap(it => it.doses.map(d => ({ k: it.id + '|' + d.id, t: d.t, days: it.days, title: suppTitle(it), body: suppBody(it) }))) : [];
+  const skip = [...suppInApp], snoozes = [], now = Date.now();
+  for (let i = -1; i <= 7; i++) {
+    const d = new Date(); d.setDate(d.getDate() + i);
+    const dk = suppDateKey(d), log = (S.data.suppLog || {})[dk] || {};
+    for (const k in log) {
+      if (log[k].s === 'done') skip.push(dk + '|' + k);
+      else if (log[k].s === 'snooze' && log[k].until > now) { const it = suppItems().find(x => x.id === k.split('|')[0]); if (it && it.remind !== false && it.active) snoozes.push({ k: dk + '|' + k, at: log[k].until, title: suppTitle(it), body: suppBody(it) }); }
+    }
+  }
+  const body = JSON.stringify({ group: sp.key, rev: sp.rev || 0, tz: Intl.DateTimeFormat().resolvedOptions().timeZone, items, skip, snoozes, sub: sub || undefined, drop: !sp.remind });
+  fetch(PUSH_URL + '/supps/sync', { method: 'POST', body, keepalive: true, headers: { 'content-type': 'text/plain' } }).catch(() => {});
+}
+
+/* ---------- reminders inside the app ---------- */
+function suppDue() {
+  if (!S.data || S.view === 'setup' || S.view === 'loading') return [];
+  const now = Date.now();
+  return suppDay(new Date()).filter(o => o.it.remind !== false && o.st === 'late' && now - (o.rec && o.rec.s === 'snooze' ? o.rec.until : o.at) < 3 * 3600e3 && !suppSeen.has(o.key + (o.rec && o.rec.until ? '@' + o.rec.until : '')));
+}
+function renderSuppNote() {
+  let box = document.getElementById('suppnote');
+  const due = suppDue();
+  if (!due.length) { if (box) box.remove(); return; }
+  if (!box) { box = document.createElement('div'); box.id = 'suppnote'; box.setAttribute('role', 'alert'); document.body.appendChild(box); }
+  const o = due[0];
+  box.innerHTML = `<div class="spnote"><span class="spic">${suppIcon(o.it)}</span><span class="tx"><b>Es hora de tu ${esc(o.it.name)}</b><span>Te toca tomar ${esc(suppAmount(o.it))}${due.length > 1 ? ` · y ${due.length - 1} más` : ''}</span></span>
+    <button class="iconbtn" data-n="close" aria-label="Cerrar el aviso">${ICON.x}</button>
+    <div class="row2"><button class="btn line slim" data-n="snooze">Posponer ${SNOOZE_MIN} min</button><button class="btn go slim" data-n="done">Hecho</button></div></div>`;
+  box.onclick = ev => {
+    const b = ev.target.closest('[data-n]'); if (!b) return;
+    if (b.dataset.n === 'close') { suppSeen.add(o.key + (o.rec && o.rec.until ? '@' + o.rec.until : '')); renderSuppNote(); }
+    if (b.dataset.n === 'done') ACTS['sp-done']({ key: o.key });
+    if (b.dataset.n === 'snooze') ACTS['sp-snooze']({ key: o.key });
+  };
+}
+/* while the app is on screen, it shows the reminder itself and tells the server not to send that one */
+setInterval(() => {
+  if (!S.data || document.hidden) return;
+  const now = Date.now(), sp = S.data.supps;
+  if (sp && sp.remind) {
+    let changed = false;
+    for (const o of suppDay(new Date())) if (o.st === 'pending' && o.it.remind !== false && o.at - now <= 25000 && o.at > now && !suppInApp.has(o.key)) { suppInApp.add(o.key); changed = true; }
+    if (changed) suppSyncNow();
+  }
+  renderSuppNote();
+  if (S.view === 'supps' && !S.sheet && !document.querySelector('#app input:focus')) render();
+}, 15000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S.data) { renderSuppNote(); suppSync(); } });
+setInterval(() => { if (S.data && !document.hidden) suppSync(); }, 10 * 60000);
+setTimeout(() => { if (S.data) { renderSuppNote(); suppSync(); } }, 2500);
+/* a tap on a supplement notification opens this section */
+if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', ev => { if (ev.data && ev.data.go === 'supps' && S.data) go('supps'); });
+{
+  const q = new URLSearchParams(location.search);
+  if (q.get('go') === 'supps') { history.replaceState(null, '', location.pathname); const t = setInterval(() => { if (S.data && S.view !== 'loading' && S.view !== 'syncing') { clearInterval(t); if (S.data.setupDone) go('supps'); } }, 200); setTimeout(() => clearInterval(t), 15000); }
+}
+
 /* ---------- Rutinas ---------- */
 function routinesView() {
   const list = aiRoutines(), draft = S.data.aiDraft;
@@ -3057,6 +3438,7 @@ ACTS['nut-clear'] = () => { aiNut().chat = []; S.ai.chatErr = ''; nutTouch(); };
 function moreView() {
   const row = (v, icon, t, sub) => `<button class="drow" data-a="tab" data-v="${v}"><span class="moreic">${icon}</span><span class="tx"><b>${t}</b><span>${sub}</span></span>${ICON.next}</button>`;
   return `<h1 class="page-title stamp pad">Más</h1><div class="pad stack" style="padding-bottom:24px">
+    ${row('supps', ICON.pill, 'Suplementación', suppMoreLine())}
     ${row('nutrition', ICON.apple, 'Nutrición', 'Consejos y preguntas a la IA')}
     ${row('gym', ICON.pin, 'Gimnasio', S.data.gym ? esc(S.data.gym.name) : 'Busca tu gimnasio y su horario')}
     ${row('body', ICON.scale, 'Cuerpo', 'Tu peso y tu objetivo')}
@@ -3411,6 +3793,14 @@ function loadDemo() {
   const lastS = sessions[sessions.length - 1]; if (lastS.dayId === 'dA') lastS.notes.e1 = 'Agarre medio. La última serie costó.';
   const data = defaultData('Alex');
   data.days = ds; data.setupDone = true;
+  { const all = [0, 1, 2, 3, 4, 5, 6], today = suppDateKey(new Date());
+    data.supps = { key: '', remind: false, rev: 1, items: [
+      { id: 'sp1', name: 'Creatina', brand: '', amount: 5, unit: 'g', icon: 'scoop', doses: [{ id: 'a', t: '10:00' }], days: all, notes: 'Con el desayuno', active: true, remind: true },
+      { id: 'sp2', name: 'Omega 3', brand: '', amount: 2, unit: 'cap', icon: 'cap', doses: [{ id: 'a', t: '09:00' }, { id: 'b', t: '15:00' }, { id: 'c', t: '21:00' }], days: all, notes: '', active: true, remind: true },
+      { id: 'sp3', name: 'Magnesio', brand: '', amount: 1, unit: 'com', icon: 'tab', doses: [{ id: 'a', t: '22:00' }], days: [0, 1, 2, 3, 4], notes: '', active: true, remind: true }] };
+    data.suppLog = { [today]: { 'sp2|a': { s: 'done', at: new Date().setHours(9, 6, 0, 0) } } };
+    for (let i = 1; i < 10; i++) { const d = new Date(); d.setDate(d.getDate() - i); const k = suppDateKey(d); data.suppLog[k] = {}; ['sp1|a', 'sp2|a', 'sp2|b', 'sp2|c', 'sp3|a'].forEach((x, j) => { if ((i + j) % 4) data.suppLog[k][x] = { s: 'done', at: d.getTime() }; }); }
+  }
   data.gym = { name: 'Gimnasio de ejemplo', address: 'Calle de ejemplo, 1', lat: null, lon: null, hours: 'Mo-Fr 07:00-22:30; Sa 09:00-14:00; Su off', source: 'manual' };
   data.aiRoutines = [{ id: 'demo-r', createdAt: now - 3 * 864e5, title: 'Ejemplo: fuerza en 2 días', summary: 'Rutina de ejemplo para ver cómo se muestran los resultados. No la ha generado la IA.', warnings: [], limits: '', days: [
     { id: 'demo-a', name: 'Día A: empuje', muscles: ['Pecho', 'Hombros', 'Tríceps'], why: 'Trabajar los movimientos básicos de empuje.', exercises: [{ id: 'dx1', name: 'Press banca', muscle: 'Pecho', sets: 4, reps: '6-8', rest: 120, how: ['Túmbate con los pies firmes y las escápulas juntas.', 'Baja la barra controlada hasta el pecho.', 'Empuja hacia arriba sin levantar la espalda del banco.'], tip: 'Error común: rebotar la barra en el pecho. Baja despacio.' }, { id: 'dx2', name: 'Press militar', muscle: 'Hombros', sets: 3, reps: '8-10', rest: 90 }, { id: 'dx3', name: 'Extensión en polea', muscle: 'Tríceps', sets: 3, reps: '10-12', rest: 60 }] },
@@ -3427,7 +3817,7 @@ const VIEWS = {
   loading: () => `<div class="pad loadscreen">${logoCompact('logo-load')}</div>`,
   syncing: () => `<div class="pad loadscreen">${logoCompact('logo-load')}<div class="spin" role="status" aria-label="Cargando"></div><p class="muted">Recuperando tu progreso</p></div>`,
   setup: setupView, home: homeView, routine: routineView, day: dayView,
-  aichat: chatView, routines: routinesView, aiq: aiqView, aigen: aiGenView, airesult: routineResultView, nutrition: nutritionView, gym: gymView, more: moreView,
+  aichat: chatView, routines: routinesView, aiq: aiqView, aigen: aiGenView, airesult: routineResultView, nutrition: nutritionView, gym: gymView, more: moreView, supps: suppsView,
   workout: workoutView, log: logView, summary: summaryView, progress: progressView, body: bodyView, settings: settingsView
 };
 ACTS['tab'] = d => go(d.v);

@@ -1,5 +1,5 @@
 // Sube el número de versión al publicar cambios en imágenes o iconos.
-const CACHE = 'forjura-v3';
+const CACHE = 'forjura-v4';
 const ASSETS = [
   "./",
   "index.html",
@@ -32,13 +32,14 @@ self.addEventListener('activate', e => {
 self.addEventListener('push', e => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (x) {}
-  e.waitUntil(self.registration.showNotification(d.title || 'FORJURA', { body: d.body || '', tag: d.tag || 'forjura', renotify: true, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png' }));
+  e.waitUntil(self.registration.showNotification(d.title || 'FORJURA', { body: d.body || '', tag: d.tag || 'forjura', renotify: true, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', data: { url: d.url || './' } }));
 });
 self.addEventListener('notificationclick', e => {
   e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || './', toSupps = url.includes('go=supps');
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-    for (const c of list) if ('focus' in c) return c.focus();
-    return self.clients.openWindow('./');
+    for (const c of list) if ('focus' in c) { if (toSupps) c.postMessage({ go: 'supps' }); return c.focus(); }
+    return self.clients.openWindow(url);
   }));
 });
 self.addEventListener('fetch', e => {
