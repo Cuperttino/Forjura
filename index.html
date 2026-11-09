@@ -1047,7 +1047,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.25';
+const APP_VERSION = '2.26';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -1256,7 +1256,7 @@ function buzz() { try { if (navigator.vibrate) navigator.vibrate([300, 120, 300,
 /* ========== notice with the app closed (Web Push through the FORJURA notice server) ==========
    The server holds one pending notice per device. While the app is on screen the notice is withdrawn just before the end,
    so the bell inside the app and the notification never both go off. */
-const PUSH_URL = '';
+const PUSH_URL = 'https://forjura-avisos.pixelsanti2005.workers.dev';
 const PUSH_KEY = 'hierro:push';
 const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const isStandalone = () => navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
