@@ -1,5 +1,5 @@
 // Sube el número de versión al publicar cambios en imágenes o iconos.
-const CACHE = 'forjura-v2';
+const CACHE = 'forjura-v3';
 const ASSETS = [
   "./",
   "index.html",
@@ -27,6 +27,19 @@ self.addEventListener('install', e => {
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+});
+// aviso de fin de descanso que manda el servidor de avisos
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (x) {}
+  e.waitUntil(self.registration.showNotification(d.title || 'FORJURA', { body: d.body || '', tag: d.tag || 'forjura', renotify: true, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png' }));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    for (const c of list) if ('focus' in c) return c.focus();
+    return self.clients.openWindow('./');
+  }));
 });
 self.addEventListener('fetch', e => {
   const req = e.request;

@@ -1047,7 +1047,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.24';
+const APP_VERSION = '2.25';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -1253,8 +1253,85 @@ function beep() {
 function buzz() { try { if (navigator.vibrate) navigator.vibrate([300, 120, 300, 120, 500]); } catch (e) {} }
 
 /* ========== rest timer ========== */
+/* ========== notice with the app closed (Web Push through the FORJURA notice server) ==========
+   The server holds one pending notice per device. While the app is on screen the notice is withdrawn just before the end,
+   so the bell inside the app and the notification never both go off. */
+const PUSH_URL = '';
+const PUSH_KEY = 'hierro:push';
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isStandalone = () => navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+const pushCapable = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const pushAvailable = () => !!PUSH_URL && !window.claude;
+const swReady = () => Promise.race([navigator.serviceWorker.ready, new Promise((_, no) => setTimeout(() => no(new Error('sw')), 8000))]);
+function pushSub() { try { return JSON.parse(ls.get(PUSH_KEY) || 'null'); } catch (e) { return null; } }
+let pushSent = 0, pushTimer = 0;
+function pushSend(path, extra, beacon) {
+  const sub = pushSub(); if (!sub || !pushAvailable()) return;
+  const body = JSON.stringify({ sub, ...extra });
+  if (beacon && navigator.sendBeacon && navigator.sendBeacon(PUSH_URL + path, body)) return;
+  fetch(PUSH_URL + path, { method: 'POST', body, keepalive: true, headers: { 'content-type': 'text/plain' } }).catch(() => {});
+}
+const NOTICE = { title: 'Descanso terminado', body: 'A por la siguiente serie' };
+function pushSchedule(beacon) { pushSent = T.endAt; pushSend('/schedule', { at: T.endAt, ...NOTICE }, beacon); }
+function pushCancel() { if (pushSent) { pushSent = 0; pushSend('/cancel', {}); } }
+function pushSync() {
+  if (!pushSub()) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => { if (T.running && T.endAt > Date.now() + 3000) { if (pushSent !== T.endAt) pushSchedule(); } else pushCancel(); }, 350);
+}
+setInterval(() => { if (pushSent && !document.hidden && T.running && T.endAt - Date.now() <= 2500) pushCancel(); }, 500);
+document.addEventListener('visibilitychange', () => { if (document.hidden && pushSub() && T.running && T.endAt > Date.now() + 1500) pushSchedule(true); });
+const b64uBytes = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), c => c.charCodeAt(0));
+async function pushEnable() {
+  if (S.pushBusy) return;
+  const perm = await Notification.requestPermission(); // must be the first await so the tap still counts
+  if (perm !== 'granted') { renderSettingsOnly(); toast(perm === 'denied' ? 'Has bloqueado las notificaciones' : 'No se activaron las notificaciones'); return; }
+  S.pushBusy = true; renderSettingsOnly();
+  try {
+    const reg = await swReady();
+    const r = await fetch(PUSH_URL + '/key'); if (!r.ok) throw new Error('key');
+    const key = b64uBytes((await r.json()).key);
+    let sub = await reg.pushManager.getSubscription();
+    const same = sub && sub.options && sub.options.applicationServerKey && new Uint8Array(sub.options.applicationServerKey).every((v, i) => v === key[i]);
+    if (sub && !same) { await sub.unsubscribe(); sub = null; }
+    sub = sub || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+    ls.set(PUSH_KEY, JSON.stringify(sub.toJSON()));
+    toast('Avisos activados en este dispositivo', 'ok');
+    pushSync();
+  } catch (e) { toast('No se pudieron activar los avisos. Comprueba tu conexión.'); }
+  S.pushBusy = false; renderSettingsOnly();
+}
+async function pushDisable() {
+  pushCancel(); ls.del(PUSH_KEY);
+  try { const reg = await swReady(), sub = await reg.pushManager.getSubscription(); if (sub) await sub.unsubscribe(); } catch (e) {}
+  renderSettingsOnly();
+}
+/* the phone can replace a subscription; keep ours current, or drop it if it is gone */
+async function pushRefresh() {
+  if (!pushSub() || !pushCapable()) return;
+  try {
+    const reg = await swReady(), sub = await reg.pushManager.getSubscription();
+    if (!sub || Notification.permission !== 'granted') ls.del(PUSH_KEY); else ls.set(PUSH_KEY, JSON.stringify(sub.toJSON()));
+  } catch (e) {}
+}
+function renderSettingsOnly() { if (S.view === 'settings') render(); }
+function pushSettings() {
+  if (!pushAvailable()) return '';
+  const label = 'Aviso con la app cerrada';
+  let note = '';
+  if (isIOS && !isStandalone()) note = 'Para usarlo, añade FORJURA a la pantalla de inicio (Compartir → Añadir a pantalla de inicio) y ábrela desde ahí.';
+  else if (!pushCapable()) note = 'Este navegador no permite avisos con la app cerrada.';
+  else if (Notification.permission === 'denied') note = 'Has bloqueado las notificaciones. Actívalas en los ajustes del móvil, en Notificaciones → FORJURA, y vuelve aquí.';
+  if (note) return `<div class="setline" style="cursor:default"><span>${label}<br><span class="muted small">${note}</span></span></div>`;
+  const on = !!pushSub();
+  return `<button class="setline" data-a="push-toggle" role="switch" aria-checked="${on}" ${S.pushBusy ? 'disabled' : ''}><span>${label}<br><span class="muted small">${S.pushBusy ? 'Activando…' : 'Una notificación al acabar el descanso, aunque estés fuera de la app o con la pantalla bloqueada. Si llevas el Apple Watch, también debería llegarte ahí.'}</span></span><span class="switch ${on ? 'on' : ''}"><i></i></span></button>
+    ${on ? `<button class="setline" data-a="push-test"><span>Probar el aviso con la app cerrada<br><span class="muted small">Pulsa y bloquea el móvil: te llegará en 10 segundos</span></span>${ICON.next.replace('<svg', '<svg width="20" height="20" style="color:var(--steel-dim)"')}</button>` : ''}`;
+}
+ACTS['push-toggle'] = () => { pushSub() ? pushDisable() : pushEnable(); };
+ACTS['push-test'] = () => { pushSend('/schedule', { at: Date.now() + 10000, title: 'Prueba de FORJURA', body: 'Así te avisará cuando acabe el descanso' }); toast('Bloquea el móvil: el aviso llega en 10 segundos', 'ok'); };
+pushRefresh();
 const T = { dur: 120, left: 120, endAt: 0, running: false, shown: false };
-function saveTimer() { ls.set(TIMER_KEY, JSON.stringify({ dur: T.dur, left: T.left, endAt: T.endAt, running: T.running, shown: T.shown })); }
+function saveTimer() { ls.set(TIMER_KEY, JSON.stringify({ dur: T.dur, left: T.left, endAt: T.endAt, running: T.running, shown: T.shown })); pushSync(); }
 function restoreTimer() {
   try {
     const t = JSON.parse(ls.get(TIMER_KEY) || 'null'); if (!t) return;
@@ -1298,10 +1375,11 @@ function fitFlash(n) {
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
 }
 function timerFinish() {
+  const away = pushSub() && Date.now() - T.endAt > 3000; // the notification already went off while the app was closed
   T.running = false; T.left = T.dur; T.shown = false; saveTimer(); holdScreen(false);
   const st = S.data ? S.data.settings : { sound: true, vibrate: true };
-  if (st.sound) playAlarm();
-  if (st.vibrate) buzz();
+  if (st.sound && !away) playAlarm();
+  if (st.vibrate && !away) buzz();
   document.title = '¡Descanso terminado!';
   setTimeout(() => { document.title = 'FORJURA'; }, 8000);
   const fx = $('#fx');
@@ -3222,7 +3300,8 @@ function settingsView() {
       ${switchLine('Empezar el descanso al guardar una serie', 'autoRest')}
       ${switchLine('Sonido al terminar', 'sound')}
       ${switchLine('Vibración al terminar', 'vibrate', 'Disponible solo en algunos móviles Android')}
-      <button class="setline" data-a="test-alert"><span>Probar el aviso</span>${ICON.next.replace('<svg', '<svg width="20" height="20" style="color:var(--steel-dim)"')}</button></div>
+      <button class="setline" data-a="test-alert"><span>Probar el aviso</span>${ICON.next.replace('<svg', '<svg width="20" height="20" style="color:var(--steel-dim)"')}</button>
+      ${pushSettings()}</div>
     </div>
     ${S.demo ? '' : `<h2 class="eyebrow sect">Inteligencia artificial</h2>
     <div style="padding-top:8px">
