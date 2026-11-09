@@ -1047,7 +1047,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.26';
+const APP_VERSION = '2.27';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -1375,11 +1375,10 @@ function fitFlash(n) {
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
 }
 function timerFinish() {
-  const away = pushSub() && Date.now() - T.endAt > 3000; // the notification already went off while the app was closed
   T.running = false; T.left = T.dur; T.shown = false; saveTimer(); holdScreen(false);
   const st = S.data ? S.data.settings : { sound: true, vibrate: true };
-  if (st.sound && !away) playAlarm();
-  if (st.vibrate && !away) buzz();
+  if (st.sound) playAlarm();
+  if (st.vibrate) buzz();
   document.title = '¡Descanso terminado!';
   setTimeout(() => { document.title = 'FORJURA'; }, 8000);
   const fx = $('#fx');
