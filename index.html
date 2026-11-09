@@ -519,6 +519,13 @@ a.btn { text-decoration: none; }
 @keyframes prup { from { transform: translateY(16px); opacity: 0; } }
 @keyframes prring { 0% { transform: scale(.25); opacity: .85; } 100% { transform: scale(3.2); opacity: 0; } }
 .cardimg { width: 100%; max-width: 340px; margin: 0 auto; border-radius: var(--radius-m); display: block; }
+.mtiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 10px; }
+.mtile { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-height: 136px; padding: 16px; border-radius: 12px; background: var(--plate); text-align: left; justify-content: flex-start; }
+.mtile b { font-size: 19px; margin-top: 6px; }
+.mtile > span:last-child { color: var(--steel); font-size: 14px; overflow-wrap: anywhere; }
+.mticon { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--plate-2); color: var(--accent); }
+.mticon svg { width: 26px; height: 26px; }
+
 /* Suplementación */
 .spempty { align-items: flex-start; }
 .spbig { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
@@ -760,6 +767,8 @@ const ICON = {
   apple: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8c-2-1.8-7.5-1.4-7.5 4.5 0 4 2.6 8 5 8 1 0 1.6-.6 2.5-.6s1.5.6 2.5.6c2.4 0 5-4 5-8C19.5 6.6 14 6.2 12 8z"/><path d="M12 8c0-2 .8-4 3-5"/></svg>',
   pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5s7-6.2 7-11.5a7 7 0 1 0-14 0c0 5.3 7 11.5 7 11.5z"/><circle cx="12" cy="10" r="2.4"/></svg>',
   bookmark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M6.5 3.5h11v17l-5.5-3.8-5.5 3.8z"/></svg>',
+  house: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z"/></svg>',
+  grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg>',
   pill: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="8.6" width="17.6" height="6.8" rx="3.4" transform="rotate(-40 12 12)"/><path d="m9.4 8.9 5.2 6.2"/></svg>',
   info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.2"/></svg>',
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
@@ -1119,7 +1128,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.29';
+const APP_VERSION = '2.30';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -1127,7 +1136,7 @@ const CALM = { get matches() {
 } };
 function applyMotion() { document.documentElement.classList.toggle('calm', CALM.matches); }
 const EASE = 'cubic-bezier(.22,.8,.24,1)';
-const TAB_ORDER = ['home', 'routine', 'routines', 'progress', 'more', 'supps', 'nutrition', 'gym', 'body', 'settings'];
+const TAB_ORDER = ['home', 'routine', 'routines', 'progress', 'supps', 'more', 'nutrition', 'gym', 'body', 'settings'];
 let prevKey = null, prevPlace = null;
 function place() {
   const v = S.view, st = S.setup;
@@ -1238,15 +1247,15 @@ function moveInd() {
 function renderChrome() {
   const b = $('#banner');
   b.innerHTML = S.demo ? '<div class="banner"><span>Datos de ejemplo. No se guardan.</span><button data-a="exit-demo">Salir</button></div>' : '';
-  const tabs = { home: 'Inicio', routine: 'Plan', routines: 'Rutinas', progress: 'Progreso', more: 'Más', supps: 'Suplementos', nutrition: 'Nutrición', gym: 'Gimnasio', body: 'Cuerpo', settings: 'Ajustes' };
-  const ic = { home: ICON.home, routine: ICON.cal, routines: ICON.list, progress: ICON.chart, more: ICON.more, supps: ICON.pill, nutrition: ICON.apple, gym: ICON.pin, body: ICON.scale, settings: ICON.gear };
-  const inMore = ['supps', 'nutrition', 'gym', 'body', 'settings'];
-  const cur = S.view === 'day' ? 'routine' : ['aiq', 'aigen', 'airesult'].includes(S.view) ? 'routines' : S.view === 'aichat' ? 'nutrition' : S.view;
+  const tabs = { home: 'Inicio', routine: 'Entrenar', progress: 'Progreso', supps: 'Suplementos', more: 'Más', nutrition: 'Nutrición', gym: 'Gimnasio', body: 'Cuerpo', settings: 'Ajustes' };
+  const ic = { home: ICON.house, routine: ICON.home, progress: ICON.chart, supps: ICON.pill, more: ICON.grid, nutrition: ICON.apple, gym: ICON.pin, body: ICON.scale, settings: ICON.gear };
+  const inMore = ['nutrition', 'gym', 'body', 'settings'];
+  const cur = ['day', 'routines', 'aiq', 'aigen', 'airesult'].includes(S.view) ? 'routine' : S.view === 'aichat' ? 'nutrition' : S.view;
   const box = $('#nav'), showNav = S.data && S.view !== 'setup';
   if (!showNav) box.innerHTML = '';
   else {
     if (!box.firstElementChild) box.innerHTML = `<div class="nav"><i class="ind"></i><div class="brand">${logoHorizontal()}</div>` + Object.keys(tabs).map(k => `<button data-a="tab" data-v="${k}" class="${k === 'more' ? 'only-m' : inMore.includes(k) ? 'only-d' : ''}">${ic[k]}<span>${tabs[k]}</span></button>`).join('') + `<p class="credit">${logoSymbol('logo-mono')} By Cuperttino</p></div>`;
-    const n = box.firstElementChild, focus = !tabs[S.view];
+    const n = box.firstElementChild, focus = !tabs[S.view] && S.view !== 'routines';
     n.classList.toggle('focus', focus);
     n.querySelectorAll('button').forEach(b => {
       const on = b.dataset.v === cur || (b.dataset.v === 'more' && inMore.includes(cur));
@@ -1795,9 +1804,12 @@ function dayRow(d, tappable = true) {
     <span class="tx"><b>${esc(d.name)}</b><span>${esc(sub)}</span><span class="dim">${exCount(d)} ejercicios · ${plannedSets(d)} series</span></span>
     ${tappable ? ICON.next : ''}</${tag}>`;
 }
+function trainSeg(on) {
+  return `<div class="pad" style="padding-block:0 6px"><div class="seg" role="tablist" aria-label="Entrenar"><button role="tab" aria-selected="${on === 'routine'}" class="${on === 'routine' ? 'on' : ''}" data-a="tab" data-v="routine">Mi plan semanal</button><button role="tab" aria-selected="${on === 'routines'}" class="${on === 'routines' ? 'on' : ''}" data-a="tab" data-v="routines">Rutinas con IA</button></div></div>`;
+}
 function routineView() {
   const list = sortedDays(), n = list.filter(d => d.weekday != null).length;
-  return `<h1 class="page-title stamp pad">Plan semanal</h1>
+  return `<h1 class="page-title stamp pad">Entrenar</h1>${trainSeg('routine')}
   <div class="pad stack" style="padding-bottom:24px">
     <p class="muted">${n ? `Entrenas ${n} ${n === 1 ? 'día' : 'días'} a la semana.` : 'Todavía no has fijado días en la semana.'}</p>
     <div class="daygrid">${list.map(d => dayRow(d)).join('') || '<div class="empty">Añade tu primer día de entrenamiento.</div>'}</div>
@@ -2882,7 +2894,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('mess
 /* ---------- Rutinas ---------- */
 function routinesView() {
   const list = aiRoutines(), draft = S.data.aiDraft;
-  const head = `<h1 class="page-title stamp pad">Rutinas</h1>`;
+  const head = `<h1 class="page-title stamp pad">Entrenar</h1>${trainSeg('routines')}`;
   if (!list.length && !draft) {
     return head + `<div class="pad stack" style="padding-bottom:24px"><p class="muted">Responde unas preguntas y la IA te prepara una rutina a tu medida.</p>
       ${aiGateCard('generar rutinas') || aiqBody(1)}</div>`;
@@ -3436,14 +3448,13 @@ ACTS['nut-clear'] = () => { aiNut().chat = []; S.ai.chatErr = ''; nutTouch(); };
 
 /* ---------- Más ---------- */
 function moreView() {
-  const row = (v, icon, t, sub) => `<button class="drow" data-a="tab" data-v="${v}"><span class="moreic">${icon}</span><span class="tx"><b>${t}</b><span>${sub}</span></span>${ICON.next}</button>`;
-  return `<h1 class="page-title stamp pad">Más</h1><div class="pad stack" style="padding-bottom:24px">
-    ${row('supps', ICON.pill, 'Suplementación', suppMoreLine())}
-    ${row('nutrition', ICON.apple, 'Nutrición', 'Consejos y preguntas a la IA')}
-    ${row('gym', ICON.pin, 'Gimnasio', S.data.gym ? esc(S.data.gym.name) : 'Busca tu gimnasio y su horario')}
-    ${row('body', ICON.scale, 'Cuerpo', 'Tu peso y tu objetivo')}
-    ${row('settings', ICON.gear, 'Ajustes', 'Cuenta, temporizador y datos')}
-  </div>`;
+  const tile = (v, icon, t, sub) => `<button class="mtile" data-a="tab" data-v="${v}"><span class="mticon">${icon}</span><b>${t}</b><span>${sub}</span></button>`;
+  return `<h1 class="page-title stamp pad">Más</h1><div class="pad" style="padding-bottom:24px"><div class="mtiles">
+    ${tile('nutrition', ICON.apple, 'Nutrición', 'Consejos y preguntas a la IA')}
+    ${tile('gym', ICON.pin, 'Gimnasio', S.data.gym ? esc(S.data.gym.name) : 'Busca tu gimnasio y su horario')}
+    ${tile('body', ICON.scale, 'Cuerpo', 'Tu peso y tu objetivo')}
+    ${tile('settings', ICON.gear, 'Ajustes', 'Cuenta, temporizador y datos')}
+  </div></div>`;
 }
 
 /* ========== progression suggestion ========== */
