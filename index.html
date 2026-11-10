@@ -526,6 +526,13 @@ a.btn { text-decoration: none; }
 .mticon { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--plate-2); color: var(--accent); }
 .mticon svg { width: 26px; height: 26px; }
 
+.diag { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.diag li { padding: 10px 12px; border-radius: 8px; background: var(--plate-2); font-size: 15px; }
+.diag li.ok { box-shadow: inset 3px 0 0 var(--accent); }
+.diag li.bad { box-shadow: inset 3px 0 0 var(--down); }
+.diag.log li { display: flex; flex-direction: column; gap: 2px; }
+.diag.log li span { color: var(--steel); font-size: 14px; }
+
 /* Suplementación */
 .spempty { align-items: flex-start; }
 .spbig { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
@@ -1148,7 +1155,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.31';
+const APP_VERSION = '2.32';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
@@ -1970,7 +1977,7 @@ function renderSheet() {
     setTimeout(() => o.remove(), 190);
     return;
   }
-  const map = { timer: timerSheet, confirm: confirmSheet, group: groupSheet, ex: exSheet, exedit: exEditSheet, pickday: pickDaySheet, name: nameSheet, supp: suppSheet, exinfo: exInfoSheet, card: cardSheet, aiconsent: aiConsentSheet, rtregen: rtRegenSheet, rtex: rtExSheet, rtday: rtDaySheet, toplan: toPlanSheet, gymloc: gymLocSheet, gymedit: gymEditSheet, wd: wdSheet, goal: goalSheet, height: heightSheet, bodyask: bodyAskSheet };
+  const map = { timer: timerSheet, confirm: confirmSheet, group: groupSheet, ex: exSheet, exedit: exEditSheet, pickday: pickDaySheet, name: nameSheet, supp: suppSheet, suppdiag: suppDiagSheet, exinfo: exInfoSheet, card: cardSheet, aiconsent: aiConsentSheet, rtregen: rtRegenSheet, rtex: rtExSheet, rtday: rtDaySheet, toplan: toPlanSheet, gymloc: gymLocSheet, gymedit: gymEditSheet, wd: wdSheet, goal: goalSheet, height: heightSheet, bodyask: bodyAskSheet };
   const keep = el.querySelector('.overlay:not(.closing) .sheet'), same = keep && el.dataset.t === s.type;
   el.dataset.t = s.type;
   const html = `<div class="overlay" data-backdrop="1">${map[s.type]()}</div>`;
@@ -2704,7 +2711,8 @@ function suppRemindCard() {
   const sub = S.suppBusy ? 'Activando…' : !on ? 'Te avisamos a la hora de cada toma, aunque tengas la app cerrada.' : here ? 'Activados en este dispositivo. Cambia los horarios cuando quieras: los avisos se actualizan solos.' : 'Activados en tu cuenta, pero no en este dispositivo. Vuelve a pulsar para recibirlos también aquí.';
   return wrap(`${note ? `<p class="muted small">${note}</p>` : ''}
     <button class="setline" data-a="sp-remind" role="switch" aria-checked="${on && (here || !!note)}" ${S.suppBusy || (note && !on) ? 'disabled' : ''}><span>Avisos en el móvil<br><span class="muted small">${sub}</span></span><span class="switch ${on && (here || note) ? 'on' : ''}"><i></i></span></button>
-    ${on && here ? '<button class="setline" data-a="sp-test"><span>Probar un aviso<br><span class="muted small">Pulsa y bloquea el móvil: te llegará en 10 segundos</span></span>' + ICON.next + '</button>' : ''}`);
+    ${on && here ? '<button class="setline" data-a="sp-test"><span>Probar un aviso<br><span class="muted small">Pulsa y bloquea el móvil: te llegará en 10 segundos</span></span>' + ICON.next + '</button>' : ''}
+    ${on ? '<button class="setline" data-a="sp-diag"><span>Comprobar avisos<br><span class="muted small">Mira si este dispositivo está registrado y qué pasó con los últimos avisos</span></span>' + ICON.next + '</button>' : ''}`);
 }
 function suppRow(o, today) {
   const canAct = o.dk <= today;
@@ -2844,6 +2852,41 @@ ACTS['sp-remind'] = async () => {
 };
 ACTS['sp-test'] = () => { pushSend('/schedule', { at: Date.now() + 10000, title: '💊 Prueba de FORJURA', body: 'Así te avisaremos de cada toma' }); toast('Bloquea el móvil: el aviso llega en 10 segundos', 'ok'); };
 
+/* ---------- reminder check: what the notice server knows about this account and device ---------- */
+{ const close = ACTS['close-sheet']; ACTS['close-sheet'] = (...a) => { const r = close(...a); setTimeout(renderSuppNote, 300); return r; }; }
+ACTS['sp-diag'] = async () => {
+  S.sheet = { type: 'suppdiag', busy: true }; renderSheet(); renderSuppNote();
+  const sp = suppData(), sub = pushSub(), post = (path, body) => fetch(PUSH_URL + path, { method: 'POST', body: JSON.stringify(body), headers: { 'content-type': 'text/plain' } }).then(r => r.json());
+  try {
+    suppSyncNow();
+    await new Promise(r => setTimeout(r, 1200));
+    const st = await post('/supps/status', { group: sp.key, sub: sub || undefined });
+    const rest = sub ? await post('/status', { sub }).catch(() => ({})) : {};
+    if (S.sheet && S.sheet.type === 'suppdiag') { S.sheet = { type: 'suppdiag', st, rest, perm: 'Notification' in window ? Notification.permission : 'none', sub: !!sub }; renderSheet(); }
+  } catch (e) { if (S.sheet && S.sheet.type === 'suppdiag') { S.sheet = { type: 'suppdiag', err: 'No se pudo contactar con el servidor de avisos. Comprueba tu conexión.' }; renderSheet(); } }
+};
+function suppDiagSheet() {
+  const sh = S.sheet, head = `<div class="shead"><h2 class="stamp">Comprobar avisos</h2><button class="iconbtn" data-a="close-sheet" aria-label="Cerrar">${ICON.x}</button></div>`;
+  if (sh.busy) return `<div class="sheet">${head}<div class="stack" style="align-items:center;padding:20px"><div class="spin" role="status" aria-label="Comprobando"></div><p class="muted">Preguntando al servidor de avisos…</p></div></div>`;
+  if (sh.err) return `<div class="sheet">${head}<div class="warn" role="alert"><p>${esc(sh.err)}</p></div></div>`;
+  const st = sh.st || {}, when = t => t ? new Date(t).toLocaleString('es-ES', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+  const name = k => { const [dk, sid, did] = String(k).split('|'); const it = suppItems().find(x => x.id === sid); const d = it && it.doses.find(x => x.id === did); return (it ? it.name : 'Suplemento borrado') + (d ? ' · ' + d.t : '') + ' · ' + dk.split('-').reverse().slice(0, 2).join('/'); };
+  const res = r => r === 'skip' ? 'No se envió: ya estaba marcada como tomada o tenías la app abierta' : r === 'sin dispositivos' ? 'No se envió: no había ningún dispositivo registrado' : /^2\d\d(,2\d\d)*$/.test(r) ? 'Enviado a Apple y aceptado' : 'Rechazado: ' + r;
+  const ok = (good, text) => `<li class="${good ? 'ok' : 'bad'}">${good ? '✓' : '✕'} ${text}</li>`;
+  const lines = [
+    ok(sh.perm === 'granted', sh.perm === 'granted' ? 'Notificaciones permitidas en este dispositivo' : sh.perm === 'denied' ? 'Notificaciones bloqueadas: actívalas en Ajustes del móvil → Notificaciones → FORJURA' : 'Este dispositivo aún no ha dado permiso de notificaciones'),
+    ok(sh.sub && st.thisDevice, sh.sub && st.thisDevice ? 'Este dispositivo está registrado para recibir avisos' : 'Este dispositivo no está registrado: desactiva y vuelve a activar «Avisos en el móvil» aquí'),
+    ok(st.exists && st.items > 0, st.exists ? `${st.items} ${st.items === 1 ? 'toma programada' : 'tomas programadas'} en ${st.devices} ${st.devices === 1 ? 'dispositivo' : 'dispositivos'}` : 'El servidor todavía no tiene tus suplementos'),
+    ok(!!st.next, st.next ? 'Próximo aviso: ' + esc(when(st.next)) : 'No hay ningún aviso pendiente')
+  ];
+  const log = (st.log || []).slice().reverse();
+  return `<div class="sheet">${head}<ul class="diag">${lines.join('')}</ul>
+    <h3 class="eyebrow">Últimos avisos</h3>
+    ${log.length ? `<ul class="diag log">${log.map(l => `<li><b>${esc(name(l.k))}</b><span>${esc(when(l.t))} — ${esc(res(l.r))}</span></li>`).join('')}</ul>` : '<p class="muted small">Todavía no se ha enviado ninguno desde este cambio.</p>'}
+    ${sh.rest && sh.rest.t ? `<p class="dim small">Último aviso de descanso: ${esc(when(sh.rest.t))} — ${esc(res(String(sh.rest.status)))}</p>` : ''}
+    <p class="dim small">Si pone «Enviado a Apple y aceptado» y no lo viste, revisa en el iPhone Ajustes → Notificaciones → FORJURA (que estén activadas, con sonido y en el Centro de notificaciones) y que no tuvieras un modo Concentración.</p></div>`;
+}
+
 /* ---------- reminders: server plan ---------- */
 const suppSeen = new Set(); // reminders already shown inside the app in this session
 const suppInApp = new Set(); // doses the app will show itself, so the server skips the notification
@@ -2875,7 +2918,7 @@ function suppDue() {
 }
 function renderSuppNote() {
   let box = document.getElementById('suppnote');
-  const due = suppDue();
+  const due = S.sheet ? [] : suppDue(); // never on top of an open sheet
   if (!due.length) { if (box) box.remove(); return; }
   if (!box) { box = document.createElement('div'); box.id = 'suppnote'; box.setAttribute('role', 'alert'); document.body.appendChild(box); }
   const o = due[0];

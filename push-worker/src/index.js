@@ -59,6 +59,10 @@ export default {
     if (req.method !== 'POST') return json({ error: 'not found' }, 404);
     let body;
     try { body = JSON.parse(await req.text()); } catch (e) { return json({ error: 'json' }, 400); }
+    if (url.pathname === '/supps/status') {
+      if (!body || !GROUP.test(body.group || '')) return json({ error: 'bad' }, 400);
+      return json(await env.PUSH.get(env.PUSH.idFromName('group:' + body.group)).status(body.sub && body.sub.endpoint));
+    }
     if (url.pathname === '/supps/sync') {
       if (!body || !GROUP.test(body.group || '') || !validTz(body.tz) || (body.sub && !validSub(body.sub))) return json({ error: 'bad' }, 400);
       const items = (Array.isArray(body.items) ? body.items : []).slice(0, 80).filter(x => x && typeof x.k === 'string' && x.k.length <= 60 && HHMM.test(x.t) && Array.isArray(x.days))
@@ -80,6 +84,7 @@ export default {
       return json({ ok: true });
     }
     if (url.pathname === '/cancel') { await job.cancel(); return json({ ok: true }); }
+    if (url.pathname === '/status') return json((await job.lastSend()) || {});
     return json({ error: 'not found' }, 404);
   }
 };
@@ -96,6 +101,7 @@ export class Push extends DurableObject {
   }
   async publicKey() { return (await this.keys()).pub; }
   async schedule(job) { await this.ctx.storage.put('job', job); await this.ctx.storage.setAlarm(job.at); }
+  async lastSend() { return this.ctx.storage.get('lastSend'); }
   async cancel() { await this.ctx.storage.delete('job'); await this.ctx.storage.deleteAlarm(); }
   /* supplement reminders: one instance per account (named by a random key the app keeps in the account data) */
   async syncPlan(m) {
@@ -107,8 +113,15 @@ export class Push extends DurableObject {
       g.subs = g.subs.filter(x => x.endpoint !== m.sub.endpoint);
       if (!m.drop) g.subs = [m.sub, ...g.subs].slice(0, 10);
     }
+    g.synced = now;
     await this.ctx.storage.put('group', g);
     await this.planAlarm(g);
+  }
+  async status(endpoint) {
+    const g = await this.ctx.storage.get('group');
+    if (!g) return { exists: false };
+    const alarm = await this.ctx.storage.getAlarm();
+    return { exists: true, synced: g.synced || null, tz: g.tz, items: g.items.length, devices: g.subs.length, thisDevice: !!endpoint && g.subs.some(s => s.endpoint === endpoint), next: alarm || null, log: (g.log || []).slice(-12) };
   }
   async planAlarm(g) {
     const now = Date.now(), skip = new Set(g.skip);
@@ -122,17 +135,27 @@ export class Push extends DurableObject {
   }
   async alarmGroup(g) {
     const now = Date.now(), skip = new Set(g.skip), due = [];
-    for (const o of occurrences(g.items, g.tz, Math.max(g.last, now - 30 * 60000), now + 1000)) if (!skip.has(o.key) && !g.fired[o.key]) { g.fired[o.key] = now; due.push({ title: o.it.title, body: o.it.body, tag: 'supp-' + o.key }); }
-    for (const z of g.snoozes) if (z.at <= now + 1000 && z.at > now - 30 * 60000 && !skip.has(z.k) && !g.fired[z.k + '@' + z.at]) { g.fired[z.k + '@' + z.at] = now; due.push({ title: z.title, body: z.body, tag: 'supp-' + z.k }); }
+    g.log = g.log || [];
+    for (const o of occurrences(g.items, g.tz, Math.max(g.last, now - 30 * 60000), now + 1000)) {
+      if (skip.has(o.key)) { g.log.push({ t: now, k: o.key, r: 'skip' }); continue; }
+      if (!g.fired[o.key]) { g.fired[o.key] = now; due.push({ title: o.it.title, body: o.it.body, tag: 'supp-' + o.key, k: o.key }); }
+    }
+    for (const z of g.snoozes) if (z.at <= now + 1000 && z.at > now - 30 * 60000 && !skip.has(z.k) && !g.fired[z.k + '@' + z.at]) { g.fired[z.k + '@' + z.at] = now; due.push({ title: z.title, body: z.body, tag: 'supp-' + z.k, k: z.k }); }
     g.last = now;
+    g.log = g.log.slice(-30);
     for (const k in g.fired) if (now - g.fired[k] > 3 * 864e5) delete g.fired[k];
     if (due.length) {
       const keys = await this.env.PUSH.get(this.env.PUSH.idFromName('vapid')).keys(), gone = new Set();
-      for (const n of due) for (const sub of g.subs) {
-        try {
-          const r = await sendPush(sub, JSON.stringify({ ...n, url: './?go=supps' }), keys, CONTACT);
-          if (r.status === 404 || r.status === 410) gone.add(sub.endpoint);
-        } catch (e) {}
+      for (const n of due) {
+        const codes = [];
+        for (const sub of g.subs) {
+          try {
+            const r = await sendPush(sub, JSON.stringify({ title: n.title, body: n.body, tag: n.tag, url: './?go=supps' }), keys, CONTACT);
+            codes.push(r.ok ? String(r.status) : r.status + ' ' + (await r.text()).slice(0, 80));
+            if (r.status === 404 || r.status === 410) gone.add(sub.endpoint);
+          } catch (e) { codes.push('error'); }
+        }
+        g.log.push({ t: now, k: n.k, r: g.subs.length ? codes.join(',') : 'sin dispositivos' });
       }
       g.subs = g.subs.filter(s => !gone.has(s.endpoint));
     }
@@ -147,6 +170,7 @@ export class Push extends DurableObject {
     await this.ctx.storage.delete('job');
     if (Date.now() - job.at > 2 * 60 * 1000) return; // too late to be useful
     const keys = await this.env.PUSH.get(this.env.PUSH.idFromName('vapid')).keys();
-    await sendPush(job.sub, JSON.stringify({ title: job.title, body: job.body, tag: 'forjura-rest', url: './' }), keys, CONTACT);
+    const r = await sendPush(job.sub, JSON.stringify({ title: job.title, body: job.body, tag: 'forjura-rest', url: './' }), keys, CONTACT);
+    await this.ctx.storage.put('lastSend', { t: Date.now(), status: r.status, text: (await r.text()).slice(0, 200) });
   }
 }
