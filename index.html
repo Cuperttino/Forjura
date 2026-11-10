@@ -718,16 +718,36 @@ const IMAGES = [
   ['img/gym-6.jpg', 'Polea metálica de una máquina con su cable de acero']
 ];
 const QUOTES = [
-  'La barra no sabe qué día has tenido. Levántala igual.', 'Una serie más que ayer ya es progreso.', 'Hoy pesa. Por eso cuenta.', 'Nadie se arrepiente de haber entrenado.',
-  'El hierro siempre dice la verdad.', 'Las ganas vienen después de la primera serie.', 'Dos kilos y medio más. Ese es el plan.', 'No hace falta motivación. Hace falta aparecer.',
-  'Tu yo de dentro de un año te lo agradece hoy.', 'Lo difícil era venir. Ya estás aquí.', 'Apunta el peso. Mañana tendrás que superarlo.', 'La constancia levanta más que la fuerza.',
-  'Cada repetición es un voto por quien quieres ser.', 'Cansado también se entrena.', 'El disco pequeño también cuenta.', 'Termina la serie. Luego decides.',
-  'Lo que no se apunta, se olvida. Lo que se apunta, mejora.', 'Empieza ligero. Termina orgulloso.', 'Sin prisa, sin excusas, sin saltarte el día de pierna.', 'Fuerte no se nace. Se apunta serie a serie.',
-  'El descanso también es parte del trabajo.', 'Un día malo en el gimnasio vale más que un día bueno en el sofá.', 'Hoy compites contra tu última marca.', 'Tu única competencia está en el historial.',
-  'La última repetición es la que te cambia.', 'Carga la barra y deja el móvil.', 'Pequeños aumentos, grandes años.', 'Si fuera fácil, no pesaría.',
-  'Respira. Aprieta. Sube.', 'Hoy no hace falta un récord. Hace falta hacerlo.', 'Disciplina es entrenar cuando no apetece.', 'Vuelve a por la que te dejaste la semana pasada.',
-  'La técnica primero. El peso ya llegará.', 'Mismo peso, una repetición más. También vale.', 'Lo mejor del entreno es cómo sales.', 'Otro día, otra marca que batir.',
-  'Tu cuerpo se acuerda de cada día que viniste.', 'Menos pensar, más cargar.', 'El progreso se ve en los números antes que en el espejo.', 'Una semana completa empieza con este entreno.'
+  'Venir ya es la mitad del entreno.',
+  'Un poco mejor que ayer. Eso es todo.',
+  'Tu cuerpo te da las gracias por cada día que vienes.',
+  'No compitas con nadie: mira lo lejos que has llegado.',
+  'Constancia antes que perfección.',
+  'Cada día que entrenas cuenta, aunque no lo notes todavía.',
+  'Hoy basta con hacerlo. Lo perfecto puede esperar.',
+  'Estás construyendo algo que nadie te puede quitar.',
+  'Pasito a pasito también se llega lejos.',
+  'Date crédito: hace un tiempo esto te costaba más.',
+  'Entrenar es cuidarte. Hoy te toca.',
+  'No hace falta un gran día. Hace falta presentarse.',
+  'Lo estás haciendo mejor de lo que crees.',
+  'Cada repetición suma, aunque sea pequeña.',
+  'Mírate dentro de unos meses: te vas a alegrar de haber venido hoy.',
+  'Si hoy cuesta, ve a tu ritmo. Lo importante es seguir.',
+  'Tu progreso es tuyo. Disfrútalo.',
+  'Un buen entreno empieza por ponerte las zapatillas.',
+  'Descansar bien también es avanzar.',
+  'Sé paciente contigo: los cambios llegan.',
+  'Hoy puedes con un poco más que la última vez.',
+  'El mejor entreno es el que haces.',
+  'Vas por buen camino. Sigue.',
+  'Celebra lo pequeño: es lo que te trae lo grande.',
+  'Tu salud te lo agradecerá dentro de muchos años.',
+  'No tienes que ser el más fuerte. Solo constante.',
+  'Cada semana que cumples es una victoria.',
+  'Escucha a tu cuerpo y dale lo mejor que tengas hoy.',
+  'Lo difícil se vuelve fácil a fuerza de repetirlo.',
+  'Hoy es un buen día para sentirte orgulloso.'
 ];
 const MUSCLES = ['Pecho', 'Espalda', 'Piernas', 'Hombros', 'Bíceps', 'Tríceps', 'Abdominales', 'Glúteos'];
 const LIB = {
@@ -1128,7 +1148,7 @@ function plannedSets(d) { return d.groups.reduce((n, g) => n + g.exercises.reduc
 /* ========== navigation ========== */
 const screenEl = () => $('#screen');
 function go(view, p = {}) { S.view = view; S.p = p; S.sheet = null; render(true); }
-const APP_VERSION = '2.30';
+const APP_VERSION = '2.31';
 const OS_CALM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const CALM = { get matches() {
   const m = S.data && S.data.settings ? S.data.settings.motion : undefined;
